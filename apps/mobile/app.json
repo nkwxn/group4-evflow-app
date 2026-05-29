@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "EVFlow",
+    "slug": "evflow",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "evflow",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.evflow.app"
+    },
+    "android": {
+      "package": "com.evflow.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
+
