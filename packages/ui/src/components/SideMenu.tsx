@@ -68,11 +68,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderRightColor: colors.border,
     borderRightWidth: 1,
-    flex: 1,
+    flexBasis: 256,
+    flexGrow: 0,
+    flexShrink: 0,
     justifyContent: 'space-between',
     minHeight: '100%',
     padding: 18,
-    width: 258
+    width: 256
   },
   top: {
     gap: 28
