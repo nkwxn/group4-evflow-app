@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { colors } from '../theme/colors';
 
 type FilterPillProps = {
   label: string;
@@ -28,16 +29,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8
   },
   selected: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e'
+    backgroundColor: colors.primary,
+    borderColor: colors.primary
   },
   label: {
-    color: '#334155',
+    color: colors.text,
     fontSize: 14,
     fontWeight: '600'
   },
   selectedLabel: {
-    color: '#ffffff'
+    color: colors.text
   }
 });
-
