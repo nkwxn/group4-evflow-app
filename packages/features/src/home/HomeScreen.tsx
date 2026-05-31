@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '@evflow/ui';
+import { useAppSafeAreaInsets } from './useAppSafeAreaInsets';
 
 type UserRole = 'driver' | 'operator';
 
@@ -26,8 +27,19 @@ type LoginScreenProps = {
 };
 
 function LoginScreen({ onLogin }: LoginScreenProps) {
+  const insets = useAppSafeAreaInsets();
+
   return (
-    <ScrollView contentContainerStyle={styles.loginPage} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={[
+        styles.loginPage,
+        {
+          paddingBottom: 36 + insets.bottom,
+          paddingTop: 36 + insets.top
+        }
+      ]}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.loginTop}>
         <Text style={styles.signupText}>
           Belum punya akun? <Text style={styles.signupLink}>Daftar Sekarang</Text>
@@ -94,9 +106,11 @@ type ProfileSelectionScreenProps = {
 };
 
 function ProfileSelectionScreen({ selectedRole, onBack, onSelectRole }: ProfileSelectionScreenProps) {
+  const insets = useAppSafeAreaInsets();
+
   return (
     <View style={styles.profilePage}>
-      <View style={styles.profileHeader}>
+      <View style={[styles.profileHeader, { paddingTop: insets.top }]}>
         <Pressable accessibilityLabel="Kembali" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
           <Text style={styles.backIcon}>‹</Text>
         </Pressable>
@@ -104,7 +118,7 @@ function ProfileSelectionScreen({ selectedRole, onBack, onSelectRole }: ProfileS
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.profileContent}>
+      <ScrollView contentContainerStyle={[styles.profileContent, { paddingBottom: 120 + insets.bottom }]}>
         <Text style={styles.profileTitle}>Selesaikan Profil Anda</Text>
         <Text style={styles.profileSubtitle}>
           Pilih jenis akun untuk menyesuaikan pengalaman berkendara atau perencanaan Anda.
@@ -126,7 +140,7 @@ function ProfileSelectionScreen({ selectedRole, onBack, onSelectRole }: ProfileS
         />
       </ScrollView>
 
-      <View style={styles.profileFooter}>
+      <View style={[styles.profileFooter, { paddingBottom: 20 + insets.bottom }]}>
         <Pressable accessibilityRole="button" style={styles.continueButton}>
           <Text style={styles.continueText}>Lanjutkan ke Aplikasi {'->'}</Text>
         </Pressable>
