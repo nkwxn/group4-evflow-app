@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import { RoleAssetIcon } from './components/RoleAssetIcon';
 import type { UserRole } from './types';
 
 type ProfileSelectionScreenProps = {
@@ -14,8 +15,8 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
   const insets = useAppSafeAreaInsets();
 
   return (
-    <View style={styles.shell}>
-      <View style={styles.page}>
+    <View style={styles.page}>
+      <View style={styles.contentShell}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <Pressable accessibilityLabel="Kembali" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
             <Text style={styles.backIcon}>‹</Text>
@@ -32,14 +33,14 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
 
           <RoleCard
             description="Cari SPKLU terdekat, filter tipe konektor (CCS2/AC Type 2), rencanakan rute perjalanan, dan pantau pengisian daya real-time."
-            icon="▣"
+            role="driver"
             selected={selectedRole === 'driver'}
             title="Pengemudi EV (Driver)"
             onPress={() => onSelectRole('driver')}
           />
           <RoleCard
             description="Akses dashboard VoltGrid, analisis data spasial BPS, petakan demand hotspot, dan optimalkan lokasi penempatan SPKLU baru di Jabodetabek."
-            icon="⌁"
+            role="operator"
             selected={selectedRole === 'operator'}
             title="Operator & Planner"
             onPress={() => onSelectRole('operator')}
@@ -59,12 +60,12 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
 type RoleCardProps = {
   title: string;
   description: string;
-  icon: string;
+  role: UserRole;
   selected: boolean;
   onPress: () => void;
 };
 
-function RoleCard({ title, description, icon, selected, onPress }: RoleCardProps) {
+function RoleCard({ title, description, role, selected, onPress }: RoleCardProps) {
   return (
     <Pressable
       accessibilityRole="radio"
@@ -73,7 +74,7 @@ function RoleCard({ title, description, icon, selected, onPress }: RoleCardProps
       style={[styles.roleCard, selected && styles.selectedRoleCard]}
     >
       <View style={[styles.roleIcon, selected && styles.selectedRoleIcon]}>
-        <Text style={[styles.roleIconText, selected && styles.selectedRoleIconText]}>{icon}</Text>
+        <RoleAssetIcon color={selected ? colors.text : '#3d494b'} role={role} />
       </View>
 
       <View style={styles.roleText}>
@@ -91,15 +92,14 @@ function RoleCard({ title, description, icon, selected, onPress }: RoleCardProps
 const pageMaxWidth = 420;
 
 const styles = StyleSheet.create({
-  shell: {
+  page: {
     alignItems: 'center',
     backgroundColor: colors.background,
     flex: 1,
     minHeight: '100%',
     width: '100%'
   },
-  page: {
-    backgroundColor: '#ffffff',
+  contentShell: {
     flex: 1,
     maxWidth: pageMaxWidth,
     minHeight: '100%',
@@ -184,14 +184,6 @@ const styles = StyleSheet.create({
   },
   selectedRoleIcon: {
     backgroundColor: colors.primary
-  },
-  roleIconText: {
-    color: '#263238',
-    fontSize: 21,
-    fontWeight: '800'
-  },
-  selectedRoleIconText: {
-    color: colors.text
   },
   roleText: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View, Platform } from 'react-native';
 import { useLocation, useNavigate } from 'react-router';
 import { BottomNavigation, colors, SideMenu, type NavigationItem } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
@@ -34,7 +34,7 @@ export function EVDriverContainer() {
         </View>
       ) : null}
 
-      <View style={styles.content}>
+      <View style={[styles.content, activeTab === 'map' && Platform.OS === 'web' && { touchAction: 'none' } as any]}>
         {activeTab === 'map' ? (
           <DriverMapScreen bottomOffset={bottomNavOffset} topInset={topInset} />
         ) : (

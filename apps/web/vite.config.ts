@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    extensions: ['.web.tsx', '.web.ts', '.web.jsx', '.web.js', '.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     alias: {
       'react-native': 'react-native-web',
       '@evflow/shared': path.resolve(__dirname, '../../packages/shared/src'),
