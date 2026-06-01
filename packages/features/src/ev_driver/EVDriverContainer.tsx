@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useLocation, useNavigate } from 'react-router';
 import { BottomNavigation, colors, SideMenu, type NavigationItem } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { DriverAssetIcon } from './components/DriverAssetIcon';
@@ -8,13 +9,15 @@ import { MockDriverScreen } from './MockDriverScreen';
 import type { DriverTabKey } from './types';
 
 export function EVDriverContainer() {
-  const [activeTab, setActiveTab] = useState<DriverTabKey>('map');
+  const location = useLocation();
+  const navigate = useNavigate();
   const { width } = useWindowDimensions();
   const insets = useAppSafeAreaInsets();
   const desktop = width >= 768;
   const bottomNavOffset = desktop ? 0 : 84 + insets.bottom;
   const topInset = insets.top;
   const items = useDriverNavigationItems();
+  const activeTab = getActiveDriverTab(location.pathname);
 
   return (
     <View style={styles.shell}>
@@ -24,7 +27,7 @@ export function EVDriverContainer() {
             activeKey={activeTab}
             bottomContent={<Text style={styles.sidebarNote}>EV Driver Mode</Text>}
             items={items}
-            onItemPress={(key) => setActiveTab(key as DriverTabKey)}
+            onItemPress={(key) => navigate(getDriverTabPath(key as DriverTabKey))}
             subtitle="Driver"
             title="EV-FLOW"
           />
@@ -40,12 +43,26 @@ export function EVDriverContainer() {
 
         {!desktop ? (
           <View style={[styles.bottomNavWrap, { paddingBottom: insets.bottom }]}>
-            <BottomNavigation activeKey={activeTab} items={items} onItemPress={(key) => setActiveTab(key as DriverTabKey)} />
+            <BottomNavigation activeKey={activeTab} items={items} onItemPress={(key) => navigate(getDriverTabPath(key as DriverTabKey))} />
           </View>
         ) : null}
       </View>
     </View>
   );
+}
+
+function getActiveDriverTab(pathname: string): DriverTabKey {
+  const tab = pathname.split('/')[2];
+
+  if (tab === 'map' || tab === 'wallet' || tab === 'scan' || tab === 'plan_route' || tab === 'profile') {
+    return tab;
+  }
+
+  return 'map';
+}
+
+function getDriverTabPath(tab: DriverTabKey) {
+  return `/ev-driver/${tab}`;
 }
 
 function useDriverNavigationItems(): NavigationItem[] {

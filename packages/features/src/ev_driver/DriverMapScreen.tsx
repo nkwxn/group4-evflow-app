@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { createElement, Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '@evflow/ui';
 import { FilterCategory } from './components/FilterCategory';
 
@@ -10,6 +10,7 @@ type DriverMapScreenProps = {
 
 export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScreenProps) {
   const [expanded, setExpanded] = useState(true);
+  const sheetProgress = useRef(new Animated.Value(1)).current;
   const [connectorTypes, setConnectorTypes] = useState(['ccs2']);
   const [operators, setOperators] = useState(['all', 'terra', 'stroom']);
   const [chargingSpeeds, setChargingSpeeds] = useState(['ultra']);
@@ -18,16 +19,110 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 8,
         onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dy > 20) {
-            setExpanded(false);
-          }
-
-          if (gestureState.dy < -20) {
-            setExpanded(true);
-          }
+          updateSheetSizeFromDelta(gestureState.dy, setExpanded);
         }
       }),
     []
+  );
+  const sheetHeight = sheetProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [136, 560]
+  });
+  const sheetBodyOpacity = sheetProgress.interpolate({
+    inputRange: [0, 0.35, 1],
+    outputRange: [0, 0, 1]
+  });
+  const sheetBodyTranslateY = sheetProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, 0]
+  });
+
+  useEffect(() => {
+    Animated.timing(sheetProgress, {
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+      toValue: expanded ? 1 : 0,
+      useNativeDriver: false
+    }).start();
+  }, [expanded, sheetProgress]);
+
+  const filterSheet = (
+    <Animated.View style={[styles.filterSheet, { bottom: bottomOffset, height: sheetHeight }]} {...drawerPanResponder.panHandlers}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={() => setExpanded((current) => !current)}
+        style={styles.drawerHandleWrap}
+      >
+        <View style={styles.drawerHandle} />
+      </Pressable>
+
+      <View style={styles.filterHeader}>
+        <Text style={styles.filterTitle}>Filter</Text>
+        <Pressable accessibilityRole="button" onPress={() => resetFilters(setConnectorTypes, setOperators, setChargingSpeeds)}>
+          <Text style={styles.resetText}>RESET ALL</Text>
+        </Pressable>
+      </View>
+
+      <Animated.View
+        pointerEvents={expanded ? 'auto' : 'none'}
+        style={[styles.expandedContent, { opacity: sheetBodyOpacity, transform: [{ translateY: sheetBodyTranslateY }] }]}
+      >
+        <ScrollView contentContainerStyle={styles.filterContent} showsVerticalScrollIndicator={false}>
+          <FilterCategory
+            title="Connector Type"
+            options={[
+              { key: 'ccs2', label: 'CCS 2' },
+              { key: 'sae', label: 'SAE J1772' },
+              { key: 'ac_type_2', label: 'AC Type 2' },
+              { key: 'chademo', label: 'CHAdeMO' }
+            ]}
+            selectedKeys={connectorTypes}
+            onToggle={(key) => toggleSelected(key, connectorTypes, setConnectorTypes)}
+          />
+          <FilterCategory
+            title="Charging Operator"
+            options={[
+              { key: 'all', label: 'ALL' },
+              { key: 'voltron', label: 'Voltron' },
+              { key: 'starvo', label: 'Starvo' },
+              { key: 'casion', label: 'Casion' },
+              { key: 'terra', label: 'Terra' },
+              { key: 'stroom', label: 'STROOM' },
+              { key: 'shell', label: 'Shell Recharge' },
+              { key: 'pln', label: 'PLN' }
+            ]}
+            selectedKeys={operators}
+            onToggle={(key) => toggleSelected(key, operators, setOperators)}
+          />
+          <FilterCategory
+            title="Charging Speed"
+            variant="card"
+            options={[
+              { key: 'standard', label: 'Standard', description: 'Up to 7 kW' },
+              { key: 'medium', label: 'Medium', description: '7 - 22 kW' },
+              { key: 'fast', label: 'Fast', description: '22 - 50 kW' },
+              { key: 'ultra', label: 'Ultra', description: 'Over 50 kW' }
+            ]}
+            selectedKeys={chargingSpeeds}
+            onToggle={(key) => toggleSelected(key, chargingSpeeds, setChargingSpeeds)}
+          />
+        </ScrollView>
+
+        <Pressable accessibilityRole="button" style={styles.showStationsButton}>
+          <Text style={styles.showStationsText}>Show 14 Stations</Text>
+        </Pressable>
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents={expanded ? 'none' : 'auto'}
+        style={[styles.collapsedContent, { opacity: sheetProgress.interpolate({ inputRange: [0, 0.45], outputRange: [1, 0] }) }]}
+      >
+        <Pressable accessibilityRole="button" onPress={() => setExpanded(true)} style={styles.collapsedButton}>
+          <Text style={styles.collapsedText}>Show filters</Text>
+        </Pressable>
+      </Animated.View>
+    </Animated.View>
   );
 
   return (
@@ -47,78 +142,32 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
         </Pressable>
       </View>
 
-      <View style={[styles.filterSheet, { bottom: bottomOffset }, !expanded && styles.collapsedSheet]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded }}
-          onPress={() => setExpanded((current) => !current)}
-          style={styles.drawerHandleWrap}
-          {...drawerPanResponder.panHandlers}
-        >
-          <View style={styles.drawerHandle} />
-        </Pressable>
-
-        <View style={styles.filterHeader}>
-          <Text style={styles.filterTitle}>Filter</Text>
-          <Pressable accessibilityRole="button" onPress={() => resetFilters(setConnectorTypes, setOperators, setChargingSpeeds)}>
-            <Text style={styles.resetText}>RESET ALL</Text>
-          </Pressable>
-        </View>
-
-        {expanded ? (
-          <>
-            <ScrollView contentContainerStyle={styles.filterContent} showsVerticalScrollIndicator={false}>
-              <FilterCategory
-                title="Connector Type"
-                options={[
-                  { key: 'ccs2', label: 'CCS 2' },
-                  { key: 'sae', label: 'SAE J1772' },
-                  { key: 'ac_type_2', label: 'AC Type 2' },
-                  { key: 'chademo', label: 'CHAdeMO' }
-                ]}
-                selectedKeys={connectorTypes}
-                onToggle={(key) => toggleSelected(key, connectorTypes, setConnectorTypes)}
-              />
-              <FilterCategory
-                title="Charging Operator"
-                options={[
-                  { key: 'all', label: 'ALL' },
-                  { key: 'voltron', label: 'Voltron' },
-                  { key: 'starvo', label: 'Starvo' },
-                  { key: 'casion', label: 'Casion' },
-                  { key: 'terra', label: 'Terra' },
-                  { key: 'stroom', label: 'STROOM' },
-                  { key: 'shell', label: 'Shell Recharge' },
-                  { key: 'pln', label: 'PLN' }
-                ]}
-                selectedKeys={operators}
-                onToggle={(key) => toggleSelected(key, operators, setOperators)}
-              />
-              <FilterCategory
-                title="Charging Speed"
-                variant="card"
-                options={[
-                  { key: 'standard', label: 'Standard', description: 'Up to 7 kW' },
-                  { key: 'medium', label: 'Medium', description: '7 - 22 kW' },
-                  { key: 'fast', label: 'Fast', description: '22 - 50 kW' },
-                  { key: 'ultra', label: 'Ultra', description: 'Over 50 kW' }
-                ]}
-                selectedKeys={chargingSpeeds}
-                onToggle={(key) => toggleSelected(key, chargingSpeeds, setChargingSpeeds)}
-              />
-            </ScrollView>
-
-            <Pressable accessibilityRole="button" style={styles.showStationsButton}>
-              <Text style={styles.showStationsText}>Show 14 Stations</Text>
-            </Pressable>
-          </>
-        ) : (
-          <Pressable accessibilityRole="button" onPress={() => setExpanded(true)} style={styles.collapsedButton}>
-            <Text style={styles.collapsedText}>Show filters</Text>
-          </Pressable>
-        )}
-      </View>
+      <WheelResizableSheet onResize={(deltaY) => updateSheetSizeFromDelta(deltaY, setExpanded)}>{filterSheet}</WheelResizableSheet>
     </View>
+  );
+}
+
+type WheelResizableSheetProps = {
+  children: React.ReactNode;
+  onResize: (deltaY: number) => void;
+};
+
+function WheelResizableSheet({ children, onResize }: WheelResizableSheetProps) {
+  if (Platform.OS !== 'web') {
+    return <Fragment>{children}</Fragment>;
+  }
+
+  return createElement(
+    'div',
+    {
+      onWheel: (event: WheelEvent) => {
+        onResize(event.deltaY);
+      },
+      style: {
+        display: 'contents'
+      }
+    },
+    children
   );
 }
 
@@ -142,6 +191,16 @@ function resetFilters(
   setConnectorTypes([]);
   setOperators([]);
   setChargingSpeeds([]);
+}
+
+function updateSheetSizeFromDelta(deltaY: number, setExpanded: (expanded: boolean) => void) {
+  if (deltaY > 18) {
+    setExpanded(false);
+  }
+
+  if (deltaY < -18) {
+    setExpanded(true);
+  }
 }
 
 const styles = StyleSheet.create({
@@ -246,7 +305,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     left: 0,
-    maxHeight: '66%',
+    overflow: 'hidden',
     paddingBottom: 20,
     paddingHorizontal: 22,
     position: 'absolute',
@@ -255,9 +314,6 @@ const styles = StyleSheet.create({
     shadowOffset: { height: -4, width: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 14
-  },
-  collapsedSheet: {
-    maxHeight: 130
   },
   drawerHandleWrap: {
     alignItems: 'center',
@@ -288,6 +344,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 14
   },
+  expandedContent: {
+    flex: 1,
+    gap: 12
+  },
   filterContent: {
     gap: 18,
     paddingBottom: 16
@@ -307,6 +367,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 17,
     fontWeight: '900'
+  },
+  collapsedContent: {
+    left: 22,
+    position: 'absolute',
+    right: 22,
+    top: 70
   },
   collapsedButton: {
     alignItems: 'center',
