@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '@evflow/ui';
+import { Text, View } from 'react-native';
+import { mockDriverScreenStyles as styles } from '@evflow/ui';
 import type { DriverTabKey } from './types';
 
 type MockDriverScreenProps = {
@@ -22,27 +22,3 @@ export function MockDriverScreen({ tabKey, topInset = 0 }: MockDriverScreenProps
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  page: {
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24
-  },
-  title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: '900',
-    lineHeight: 34
-  },
-  body: {
-    color: '#4a555a',
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 8,
-    maxWidth: 320,
-    textAlign: 'center'
-  }
-});

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
+import { bottomNavigationStyles as styles } from '../styles/styles';
 
 type NavigationIconOptions = {
   active: boolean;
@@ -75,64 +76,3 @@ export function renderIcon(item: NavigationItem, active: boolean) {
 
   return typeof icon === 'function' ? icon({ active, color }) : icon;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 84,
-    paddingBottom: 10,
-    paddingHorizontal: 16,
-    paddingTop: 8
-  },
-  item: {
-    alignItems: 'center',
-    borderRadius: 24,
-    flex: 1,
-    gap: 4,
-    justifyContent: 'center',
-    minHeight: 56,
-    paddingHorizontal: 8
-  },
-  activeItem: {
-    backgroundColor: colors.primary
-  },
-  prominentItem: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 2,
-    justifyContent: 'center',
-    minHeight: 56
-  },
-  prominentIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderColor: colors.background,
-    borderRadius: 30,
-    borderWidth: 4,
-    height: 60,
-    justifyContent: 'center',
-    marginTop: -34,
-    width: 60
-  },
-  icon: {
-    alignItems: 'center',
-    height: 22,
-    justifyContent: 'center',
-    width: 22
-  },
-  label: {
-    color: colors.mutedText,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 16,
-    textAlign: 'center'
-  },
-  activeLabel: {
-    color: colors.text
-  }
-});

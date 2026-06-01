@@ -12,7 +12,8 @@
     "react-native-svg": ">=15",
     "react-router": ">=6.30",
     "react-router-dom": ">=6.30",
-    "react-router-native": ">=6.30"
+    "react-router-native": ">=6.30",
+    "expo-location": ">=19"
   },
   "peerDependenciesMeta": {
     "leaflet": {

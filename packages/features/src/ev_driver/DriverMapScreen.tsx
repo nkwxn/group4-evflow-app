@@ -1,7 +1,12 @@
-import { createElement, Fragment, useMemo, useState } from 'react';
-import { PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
-import { colors, LeafletMap } from '@evflow/ui';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutAnimation, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, UIManager, View, type ViewStyle } from 'react-native';
+import { driverMapStyles as styles, LeafletMap } from '@evflow/ui';
+import { getUserLocation } from './utils/location';
 import { FilterCategory } from './components/FilterCategory';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type DriverMapScreenProps = {
   bottomOffset?: number;
@@ -68,21 +73,58 @@ const stations: Station[] = [
 ];
 
 export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScreenProps) {
-  const [expanded, setExpanded] = useState(true);
-  const [drawerMode, setDrawerMode] = useState<DrawerMode>('filter');
+  const [expanded, setExpanded] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>('results');
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [connectorTypes, setConnectorTypes] = useState(['ccs2']);
   const [chargingSpeeds, setChargingSpeeds] = useState(['ultra']);
+  const expandedRef = useRef(expanded);
+  useEffect(() => {
+    expandedRef.current = expanded;
+  }, [expanded]);
+
+  const isScrolledToTopRef = useRef(true);
+
+  const handleScroll = (e: any) => {
+    isScrolledToTopRef.current = e.nativeEvent.contentOffset.y <= 0;
+  };
+
   const drawerPanResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 8,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          const isSwipingDown = gestureState.dy > 8;
+          const isSwipingUp = gestureState.dy < -8;
+
+          if (expandedRef.current) {
+            if (isSwipingDown && isScrolledToTopRef.current) {
+              return true;
+            }
+            return false;
+          }
+
+          return isSwipingDown || isSwipingUp;
+        },
         onPanResponderRelease: (_, gestureState) => {
           updateSheetSizeFromDelta(gestureState.dy, setExpanded);
         }
       }),
     []
   );
+
+  const animateNext = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  };
+
+  useEffect(() => {
+    (async () => {
+      const coords = await getUserLocation();
+      if (coords) {
+        console.log('User coordinates:', coords.latitude, coords.longitude);
+        // TODO: API CALL HERE to load nearby SPKLU stations using the user's coordinates.
+      }
+    })();
+  }, []);
   const selectedMarker = useMemo(
     () =>
       selectedStation
@@ -119,6 +161,7 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           accessibilityLabel="Open filters"
           accessibilityRole="button"
           onPress={() => {
+            animateNext();
             setDrawerMode('filter');
             setExpanded(true);
           }}
@@ -128,12 +171,14 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
         </Pressable>
       </View>
 
-      <WheelResizableSheet onResize={(deltaY) => updateSheetSizeFromDelta(deltaY, setExpanded)}>
         <View style={[styles.sheet, getSheetStateStyle(drawerMode, expanded), { bottom: bottomOffset }]} {...drawerPanResponder.panHandlers}>
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded }}
-            onPress={() => setExpanded((current) => !current)}
+            onPress={() => {
+              animateNext();
+              setExpanded((current) => !current);
+            }}
             style={styles.drawerHandleWrap}
           >
             <View style={styles.drawerHandle} />
@@ -145,17 +190,21 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
               connectorTypes={connectorTypes}
               expanded={expanded}
               onApply={() => {
+                // TODO: API CALL HERE to refresh nearby SPKLU station list based on filters
+                animateNext();
                 setDrawerMode('results');
                 setSelectedStation(null);
                 setExpanded(true);
               }}
               onClose={() => {
+                animateNext();
                 setDrawerMode('results');
                 setExpanded(false);
               }}
               onReset={() => resetFilters(setConnectorTypes, setChargingSpeeds)}
               onToggleChargingSpeed={(key) => toggleSelected(key, chargingSpeeds, setChargingSpeeds)}
               onToggleConnectorType={(key) => toggleSelected(key, connectorTypes, setConnectorTypes)}
+              onScroll={handleScroll}
             />
           ) : null}
 
@@ -163,14 +212,17 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
             <ResultsDrawer
               expanded={expanded}
               onFilter={() => {
+                animateNext();
                 setDrawerMode('filter');
                 setExpanded(true);
               }}
               onSelectStation={(station) => {
+                animateNext();
                 setSelectedStation(station);
                 setDrawerMode('detail');
                 setExpanded(true);
               }}
+              onScroll={handleScroll}
             />
           ) : null}
 
@@ -179,13 +231,13 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
               expanded={expanded}
               station={selectedStation}
               onClose={() => {
+                animateNext();
                 setDrawerMode('results');
                 setExpanded(true);
               }}
             />
           ) : null}
         </View>
-      </WheelResizableSheet>
     </View>
   );
 }
@@ -199,6 +251,7 @@ type FilterDrawerProps = {
   onReset: () => void;
   onToggleChargingSpeed: (key: string) => void;
   onToggleConnectorType: (key: string) => void;
+  onScroll?: (e: any) => void;
 };
 
 function FilterDrawer({
@@ -209,7 +262,8 @@ function FilterDrawer({
   onClose,
   onReset,
   onToggleChargingSpeed,
-  onToggleConnectorType
+  onToggleConnectorType,
+  onScroll
 }: FilterDrawerProps) {
   return (
     <View style={styles.drawerBody}>
@@ -221,7 +275,12 @@ function FilterDrawer({
       </View>
 
       <View style={[styles.expandedContent, getExpandedContentStateStyle(expanded)]}>
-        <ScrollView contentContainerStyle={styles.filterContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.filterContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
           <FilterCategory
             title="Connector Type"
             options={[
@@ -281,9 +340,10 @@ type ResultsDrawerProps = {
   expanded: boolean;
   onFilter: () => void;
   onSelectStation: (station: Station) => void;
+  onScroll?: (e: any) => void;
 };
 
-function ResultsDrawer({ expanded, onFilter, onSelectStation }: ResultsDrawerProps) {
+function ResultsDrawer({ expanded, onFilter, onSelectStation, onScroll }: ResultsDrawerProps) {
   return (
     <View style={styles.drawerBody}>
       <View style={styles.resultsHeader}>
@@ -295,7 +355,12 @@ function ResultsDrawer({ expanded, onFilter, onSelectStation }: ResultsDrawerPro
       </View>
 
       <View style={[styles.expandedContent, getExpandedContentStateStyle(expanded)]}>
-        <ScrollView contentContainerStyle={styles.stationList} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.stationList}
+          showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
           {stations.map((station) => (
             <StationCard key={station.id} station={station} onPress={() => onSelectStation(station)} />
           ))}
@@ -376,29 +441,7 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
   );
 }
 
-type WheelResizableSheetProps = {
-  children: React.ReactNode;
-  onResize: (deltaY: number) => void;
-};
 
-function WheelResizableSheet({ children, onResize }: WheelResizableSheetProps) {
-  if (Platform.OS !== 'web') {
-    return <Fragment>{children}</Fragment>;
-  }
-
-  return createElement(
-    'div',
-    {
-      onWheel: (event: WheelEvent) => {
-        onResize(event.deltaY);
-      },
-      style: {
-        display: 'contents'
-      }
-    },
-    children
-  );
-}
 
 function toggleSelected(key: string, selectedKeys: string[], setSelectedKeys: (keys: string[]) => void) {
   setSelectedKeys(selectedKeys.includes(key) ? selectedKeys.filter((selectedKey) => selectedKey !== key) : [...selectedKeys, key]);
@@ -409,14 +452,18 @@ function resetFilters(setConnectorTypes: (keys: string[]) => void, setChargingSp
   setChargingSpeeds([]);
 }
 
-function updateSheetSizeFromDelta(deltaY: number, setExpanded: (expanded: boolean) => void) {
-  if (deltaY > 18) {
-    setExpanded(false);
-  }
-
-  if (deltaY < -18) {
-    setExpanded(true);
-  }
+function updateSheetSizeFromDelta(deltaY: number, setExpanded: React.Dispatch<React.SetStateAction<boolean>>) {
+  setExpanded(current => {
+    if (deltaY > 18 && current) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      return false;
+    }
+    if (deltaY < -18 && !current) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      return true;
+    }
+    return current;
+  });
 }
 
 type WebTransitionStyle = ViewStyle & {
@@ -459,318 +506,3 @@ function getWebTransition(property: string, duration: string, timingFunction: st
     transitionTimingFunction: timingFunction
   };
 }
-
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: colors.background,
-    flex: 1,
-    overflow: 'hidden'
-  },
-  searchBar: {
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
-    flexDirection: 'row',
-    gap: 12,
-    left: 22,
-    minHeight: 66,
-    paddingHorizontal: 16,
-    position: 'absolute',
-    right: 22,
-    zIndex: 9999
-  },
-  searchIcon: {
-    color: '#64757c',
-    fontSize: 18,
-    fontWeight: '800'
-  },
-  searchInput: {
-    color: '#1f2529',
-    flex: 1,
-    fontSize: 15,
-    minHeight: 40
-  },
-  filterIcon: {
-    alignItems: 'center',
-    height: 36,
-    justifyContent: 'center',
-    width: 36
-  },
-  filterIconText: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '900'
-  },
-  sheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    boxShadow: '0 -4px 14px rgba(0, 0, 0, 0.12)',
-    left: 0,
-    overflow: 'hidden',
-    paddingBottom: 20,
-    paddingHorizontal: 22,
-    position: 'absolute',
-    right: 0,
-    zIndex: 9999
-  },
-  drawerHandleWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 24
-  },
-  drawerHandle: {
-    backgroundColor: '#b7c9cc',
-    borderRadius: 999,
-    height: 4,
-    width: 48
-  },
-  drawerBody: {
-    flex: 1
-  },
-  sheetHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18
-  },
-  sheetTitle: {
-    color: '#1f2529',
-    fontSize: 23,
-    fontWeight: '900',
-    lineHeight: 30
-  },
-  closeButton: {
-    alignItems: 'center',
-    height: 36,
-    justifyContent: 'center',
-    width: 36
-  },
-  closeText: {
-    color: '#11181c',
-    fontSize: 20,
-    fontWeight: '700',
-    lineHeight: 24
-  },
-  expandedContent: {
-    flex: 1,
-    gap: 12
-  },
-  filterContent: {
-    gap: 24,
-    paddingBottom: 14
-  },
-  categoryTitle: {
-    color: '#4c5960',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1,
-    lineHeight: 13,
-    textTransform: 'uppercase'
-  },
-  distanceSection: {
-    gap: 11
-  },
-  distanceHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  distanceValue: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '900'
-  },
-  sliderTrack: {
-    backgroundColor: '#c8d5d8',
-    borderRadius: 999,
-    height: 4,
-    justifyContent: 'center',
-    marginHorizontal: 8
-  },
-  sliderFill: {
-    backgroundColor: colors.text,
-    borderRadius: 999,
-    height: 4,
-    width: '66%'
-  },
-  sliderThumb: {
-    backgroundColor: colors.text,
-    borderColor: '#ffffff',
-    borderRadius: 9,
-    borderWidth: 2,
-    height: 18,
-    left: '64%',
-    position: 'absolute',
-    width: 18
-  },
-  sliderLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8
-  },
-  sliderLabel: {
-    color: '#4c5960',
-    fontSize: 10,
-    lineHeight: 14
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingTop: 4
-  },
-  resetButton: {
-    alignItems: 'center',
-    backgroundColor: '#c8f7fa',
-    borderColor: colors.primary,
-    borderRadius: 9,
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 46
-  },
-  resetButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '800'
-  },
-  applyButton: {
-    alignItems: 'center',
-    backgroundColor: colors.text,
-    borderRadius: 9,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 46
-  },
-  applyButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800'
-  },
-  resultsHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16
-  },
-  resultsTitle: {
-    color: '#1f2529',
-    flex: 1,
-    fontSize: 21,
-    fontWeight: '900',
-    lineHeight: 27
-  },
-  filterButton: {
-    alignItems: 'center',
-    backgroundColor: '#eceeef',
-    borderColor: '#d8dee1',
-    borderRadius: 11,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 7,
-    justifyContent: 'center',
-    minHeight: 38,
-    paddingHorizontal: 13
-  },
-  filterButtonIcon: {
-    color: '#4c5960',
-    fontSize: 14,
-    fontWeight: '900'
-  },
-  filterButtonText: {
-    color: '#2b3337',
-    fontSize: 13,
-    fontWeight: '700'
-  },
-  stationList: {
-    gap: 12,
-    paddingBottom: 24
-  },
-  stationCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dce4e7',
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 8,
-    padding: 20
-  },
-  stationName: {
-    color: '#25292d',
-    fontSize: 20,
-    fontWeight: '500',
-    lineHeight: 26
-  },
-  stationAddress: {
-    color: '#6b767b',
-    fontSize: 16,
-    lineHeight: 22
-  },
-  connectorList: {
-    gap: 6,
-    marginTop: 4
-  },
-  connectorRow: {
-    alignItems: 'center',
-    backgroundColor: '#f8f8f9',
-    borderColor: '#eceff1',
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 33,
-    paddingLeft: 10,
-    paddingRight: 14
-  },
-  connectorLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 9
-  },
-  connectorIcon: {
-    alignItems: 'center',
-    backgroundColor: '#e9fbfc',
-    borderRadius: 14,
-    height: 27,
-    justifyContent: 'center',
-    width: 27
-  },
-  connectorIconText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '900'
-  },
-  connectorName: {
-    color: '#2b3337',
-    fontSize: 12,
-    fontWeight: '900'
-  },
-  connectorMeta: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10
-  },
-  connectorSpeed: {
-    color: '#4e5d63',
-    fontSize: 8,
-    lineHeight: 11
-  },
-  connectorDivider: {
-    backgroundColor: '#cdd6da',
-    height: 14,
-    width: 1
-  },
-  connectorTotal: {
-    color: '#4e5d63',
-    fontSize: 12,
-    lineHeight: 16
-  },
-  detailTitle: {
-    color: '#1f2529',
-    flex: 1,
-    fontSize: 21,
-    fontWeight: '900',
-    lineHeight: 27,
-    paddingRight: 8
-  }
-});

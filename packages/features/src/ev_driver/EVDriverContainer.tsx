@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View, Platform } from 'react-native';
+import { Text, useWindowDimensions, View, Platform } from 'react-native';
 import { useLocation, useNavigate } from 'react-router';
-import { BottomNavigation, colors, SideMenu, type NavigationItem } from '@evflow/ui';
+import { BottomNavigation, evDriverContainerStyles as styles, SideMenu, type NavigationItem } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { DriverAssetIcon } from './components/DriverAssetIcon';
 import { DriverMapScreen } from './DriverMapScreen';
@@ -98,36 +98,3 @@ function useDriverNavigationItems(): NavigationItem[] {
     []
   );
 }
-
-const styles = StyleSheet.create({
-  shell: {
-    backgroundColor: colors.background,
-    flex: 1,
-    flexDirection: 'row',
-    minHeight: '100%'
-  },
-  content: {
-    flex: 1,
-    position: 'relative'
-  },
-  sidebarWrap: {
-    backgroundColor: colors.background,
-    flexBasis: 256,
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 256
-  },
-  bottomNavWrap: {
-    backgroundColor: colors.background,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0
-  },
-  sidebarNote: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18
-  }
-});

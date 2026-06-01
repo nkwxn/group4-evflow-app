@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
+import { screenStyles as styles } from '../styles/styles';
 
 type ScreenProps = {
   children: ReactNode;
@@ -8,14 +9,3 @@ type ScreenProps = {
 export function Screen({ children }: ScreenProps) {
   return <ScrollView contentContainerStyle={styles.content}>{children}</ScrollView>;
 }
-
-const styles = StyleSheet.create({
-  content: {
-    gap: 16,
-    marginHorizontal: 'auto',
-    maxWidth: 960,
-    padding: 20,
-    width: '100%'
-  }
-});
-

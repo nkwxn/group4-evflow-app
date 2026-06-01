@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Location from 'expo-location';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { leafletMapStyles as styles } from '../styles/styles';
 
 type LeafletMapProps = {
   center?: {
@@ -158,14 +159,3 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#d7dbdc'
-  },
-  map: {
-    flex: 1,
-    backgroundColor: 'transparent'
-  }
-});

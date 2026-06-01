@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme/colors';
+import { Pressable, Text } from 'react-native';
+import { buttonStyles as styles } from '../styles/styles';
 
 type ButtonProps = {
   children: ReactNode;
@@ -14,19 +14,3 @@ export function Button({ children, onPress }: ButtonProps) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 16
-  },
-  label: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '700'
-  }
-});

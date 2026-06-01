@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
+import { cardStyles as styles } from '../styles/styles';
 
 type CardProps = {
   children: ReactNode;
@@ -8,14 +9,3 @@ type CardProps = {
 export function Card({ children }: CardProps) {
   return <View style={styles.card}>{children}</View>;
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dbe4ef',
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 16
-  }
-});
-
