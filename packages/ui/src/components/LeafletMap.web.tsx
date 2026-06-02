@@ -5,7 +5,13 @@ type LeafletMapProps = {
     latitude: number;
     longitude: number;
   };
+  currentLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  markerIconSvg?: string;
   markers?: LeafletMapMarker[];
+  onMarkerPress?: (markerId: string) => void;
   showCurrentLocationPinpoint?: boolean;
   zoom?: number;
 };
@@ -27,12 +33,20 @@ const defaultCenter = {
   longitude: 106.8272
 };
 
-export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLocationPinpoint = false, zoom = 13 }: LeafletMapProps) {
+export function LeafletMap({
+  center = defaultCenter,
+  currentLocation,
+  markerIconSvg,
+  markers = [],
+  onMarkerPress,
+  showCurrentLocationPinpoint = false,
+  zoom = 13
+}: LeafletMapProps) {
   const reactId = useId();
   const mapContainerId = `leaflet-map-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const mapRef = useRef<import('leaflet').Map | null>(null);
   const userMarkerRef = useRef<import('leaflet').CircleMarker | null>(null);
-  const stationMarkersRef = useRef<import('leaflet').CircleMarker[]>([]);
+  const stationMarkersRef = useRef<import('leaflet').Layer[]>([]);
   const leafletRef = useRef<LeafletNamespace | null>(null);
   const pendingUserLocationRef = useRef<[number, number] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -44,7 +58,7 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
       return;
     }
 
-    if (!userMarkerRef.current) {
+    if (!userMarkerRef.current || !mapRef.current.hasLayer(userMarkerRef.current)) {
       userMarkerRef.current = leafletRef.current
         .circleMarker(coordinates, {
           color: '#ffffff',
@@ -58,8 +72,6 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
     } else {
       userMarkerRef.current.setLatLng(coordinates);
     }
-
-    mapRef.current.setView(coordinates, Math.max(zoom, 14));
   }
 
   function renderStationMarkers(nextMarkers: LeafletMapMarker[]) {
@@ -69,17 +81,35 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
 
     stationMarkersRef.current.forEach((marker) => marker.remove());
     stationMarkersRef.current = nextMarkers.map((marker) => {
-      const stationMarker = leafletRef.current!.circleMarker([marker.latitude, marker.longitude], {
-        color: '#ffffff',
-        fillColor: '#007a80',
-        fillOpacity: 1,
-        radius: 10,
-        weight: 3
-      }).addTo(mapRef.current!);
+      const stationMarker = markerIconSvg
+        ? leafletRef.current!
+            .marker([marker.latitude, marker.longitude], {
+              icon: leafletRef.current!.divIcon({
+                className: 'evflow-station-marker',
+                html: markerIconSvg,
+                iconAnchor: [15, 34],
+                iconSize: [30, 34],
+                popupAnchor: [0, -30]
+              })
+            })
+            .addTo(mapRef.current!)
+        : leafletRef.current!
+            .circleMarker([marker.latitude, marker.longitude], {
+              color: '#ffffff',
+              fillColor: '#007a80',
+              fillOpacity: 1,
+              radius: 10,
+              weight: 3
+            })
+            .addTo(mapRef.current!);
 
       if (marker.label) {
         stationMarker.bindPopup(marker.label);
       }
+
+      stationMarker.on('click', () => {
+        onMarkerPress?.(marker.id);
+      });
 
       return stationMarker;
     });
@@ -141,6 +171,8 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
       cancelled = true;
       map?.remove();
       mapRef.current = null;
+      userMarkerRef.current = null;
+      stationMarkersRef.current = [];
     };
   }, [center.latitude, center.longitude, mapContainerId, zoom]);
 
@@ -155,9 +187,14 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
       stationMarkersRef.current.forEach((marker) => marker.remove());
       stationMarkersRef.current = [];
     };
-  }, [markers]);
+  }, [markerIconSvg, markers, onMarkerPress]);
 
   useEffect(() => {
+    if (currentLocation) {
+      renderUserLocation([currentLocation.latitude, currentLocation.longitude]);
+      return;
+    }
+
     if (!showCurrentLocationPinpoint || !navigator.geolocation) {
       return;
     }
@@ -186,7 +223,7 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
     return () => {
       cancelled = true;
     };
-  }, [showCurrentLocationPinpoint, zoom]);
+  }, [currentLocation, showCurrentLocationPinpoint]);
 
   if (failed) {
     return createElement(

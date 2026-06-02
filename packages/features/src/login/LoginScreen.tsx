@@ -1,12 +1,16 @@
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, TextInput, View, type ImageSourcePropType } from 'react-native';
 import { loginScreenStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import evflowIcon from '../assets/images/evflow-icon.png';
+
+const evflowIconSource = evflowIcon as unknown as ImageSourcePropType;
 
 type LoginScreenProps = {
   onLogin: () => void;
+  onRegister: () => void;
 };
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
   const insets = useAppSafeAreaInsets();
 
   return (
@@ -22,13 +26,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     >
       <View style={styles.top}>
         <Text style={styles.signupText}>
-          Belum punya akun? <Text style={styles.signupLink}>Daftar Sekarang</Text>
+          Don't have an account?{' '}
+          <Text onPress={onRegister} style={styles.signupLink}>
+            Register Now
+          </Text>
         </Text>
       </View>
 
       <View style={styles.content}>
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoBolt}>⚡</Text>
+        <View style={styles.logoWrap}>
+          <Image source={evflowIconSource} style={styles.logoImage} />
         </View>
 
         <Text style={styles.appTitle}>EV-FLOW</Text>
@@ -40,7 +47,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             accessibilityLabel="Email"
             autoCapitalize="none"
             keyboardType="email-address"
-            placeholder="Masukkan email Anda"
+            placeholder="Enter your email"
             placeholderTextColor="#7c858b"
             style={styles.input}
           />
@@ -48,12 +55,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         <View style={styles.fieldGroup}>
           <View style={styles.passwordLabelRow}>
-            <Text style={styles.inputLabel}>Kata Sandi</Text>
-            <Text style={styles.forgotText}>Lupa?</Text>
+            <Text style={styles.inputLabel}>Password</Text>
+            <Text style={styles.forgotText}>Forgot?</Text>
           </View>
           <TextInput
-            accessibilityLabel="Kata Sandi"
-            placeholder="••••••••••••"
+            accessibilityLabel="Password"
+            placeholder="Minimum 8 characters"
             placeholderTextColor="#69777c"
             secureTextEntry
             style={styles.input}
@@ -61,12 +68,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         </View>
 
         <Pressable accessibilityRole="button" onPress={onLogin} style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Masuk</Text>
+          <Text style={styles.loginButtonText}>Log In</Text>
         </Pressable>
 
         <View style={styles.dividerRow}>
           <View style={styles.divider} />
-          <Text style={styles.dividerText}>- Atau masuk dengan -</Text>
+          <Text style={styles.dividerText}>- Login With -</Text>
           <View style={styles.divider} />
         </View>
 

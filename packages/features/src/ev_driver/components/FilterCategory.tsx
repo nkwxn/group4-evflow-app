@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { filterCategoryStyles as styles } from '@evflow/ui';
+import tickIcon from '../../assets/images/tick-with-icon.svg?raw';
+import { SvgAssetIcon } from '../../shared/SvgAssetIcon';
 
 export type FilterOption = {
   key: string;
@@ -34,6 +36,11 @@ export function FilterCategory({ title, options, selectedKeys, variant = 'pill',
               <Text style={[variant === 'card' ? styles.cardLabel : styles.pillLabel, selected && styles.selectedLabel]}>
                 {option.label}
               </Text>
+              {variant === 'card' && selected ? (
+                <View style={styles.cardTickIcon}>
+                  <SvgAssetIcon color="#005F64" height={12} name="tick" svg={tickIcon} width={12} />
+                </View>
+              ) : null}
               {option.description ? (
                 <Text style={[styles.description, selected && styles.selectedDescription]}>{option.description}</Text>
               ) : null}

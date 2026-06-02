@@ -5,4 +5,5 @@ export * from './home/HomeScreen';
 export * from './login/LoginScreen';
 export * from './profile_selection/ProfileSelectionScreen';
 export * from './profile_selection/types';
+export * from './registration/RegistrationScreen';
 export * from './routing/AppRouter';

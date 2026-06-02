@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutAnimation, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, UIManager, View, type ViewStyle } from 'react-native';
-import { driverMapStyles as styles, LeafletMap } from '@evflow/ui';
+import { LayoutAnimation, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, UIManager, View, useWindowDimensions, type ViewStyle } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { colors, driverMapStyles as styles, LeafletMap } from '@evflow/ui';
+import { fetchConnectorTypes, fetchNearbyStations, fetchSpeedTiers, fetchStations, type ConnectorTypeApiItem, type SpeedTierApiItem, type StationApiItem } from '@evflow/shared';
 import { getUserLocation } from './utils/location';
-import { FilterCategory } from './components/FilterCategory';
+import { FilterCategory, type FilterOption } from './components/FilterCategory';
+import { locationPinSvg } from './components/locationPinSvg';
+import { PlatformSlider } from '../shared/PlatformSlider';
+import searchIcon from '../assets/images/search-icon.svg?raw';
+import lightningIcon from '../assets/images/lightning-icon.svg?raw';
+import filterSettingIcon from '../assets/images/filter-setting.svg?raw';
+import closeButtonIcon from '../assets/images/close-button-icon.svg?raw';
+import { SvgAssetIcon } from '../shared/SvgAssetIcon';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -25,60 +34,59 @@ type Station = {
   id: string;
   address: string;
   connectors: ConnectorInfo[];
+  distanceKm?: number;
   latitude: number;
   longitude: number;
   name: string;
 };
 
-const stations: Station[] = [
-  {
-    id: 'pln-thamrin',
-    address: 'Jl. M.H. Thamrin No. 8, Jakarta Pusat',
-    connectors: [
-      { label: 'CCS 2', speed: 'ULTRA-FAST', total: 2 },
-      { label: 'Type 2', speed: 'SLOW', total: 1 },
-      { label: 'CHAdeMO', speed: 'FAST', total: 1 }
-    ],
-    latitude: -6.1841,
-    longitude: 106.8236,
-    name: 'SPKLU PLN Sukses Thamrin Hub'
-  },
-  {
-    id: 'voltron-mampang',
-    address: 'Jl. Mampang Prpt. Raya No.16',
-    connectors: [{ label: 'Type 2', speed: 'SLOW', total: 1 }],
-    latitude: -6.2417,
-    longitude: 106.8258,
-    name: 'SPKLU Voltron'
-  },
-  {
-    id: 'charge-tb-simatupang',
-    address: 'Jl. TB Simatupang No.41',
-    connectors: [{ label: 'CCS 2', speed: 'ULTRA-FAST', total: 2 }],
-    latitude: -6.2918,
-    longitude: 106.8054,
-    name: 'SPKLU Charge +'
-  },
-  {
-    id: 'pln-kuningan',
-    address: 'Jl. HR Rasuna Said, Jakarta Selatan',
-    connectors: [
-      { label: 'CCS 2', speed: 'ULTRA-FAST', total: 2 },
-      { label: 'Type 2', speed: 'SLOW', total: 1 }
-    ],
-    latitude: -6.2206,
-    longitude: 106.8326,
-    name: 'SPKLU PLN Sukses Thamrin Hub'
-  }
-];
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
 
+type MapViewState = {
+  center: Coordinates;
+  zoom: number;
+};
+
+const defaultStationLimit = 1000;
+const defaultDistanceKm = 8;
+const distanceOptions = [3, 5, 8, 10] as const;
+const defaultMapView: MapViewState = {
+  center: {
+    latitude: -6.1754,
+    longitude: 106.8272
+  },
+  zoom: 13
+};
 export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScreenProps) {
+  const { height, width } = useWindowDimensions();
   const [expanded, setExpanded] = useState(false);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('results');
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
-  const [connectorTypes, setConnectorTypes] = useState(['ccs2']);
-  const [chargingSpeeds, setChargingSpeeds] = useState(['ultra']);
+  const [connectorTypes, setConnectorTypes] = useState<string[]>([]);
+  const [chargingSpeeds, setChargingSpeeds] = useState<string[]>([]);
+  const [appliedConnectorTypes, setAppliedConnectorTypes] = useState<string[]>([]);
+  const [appliedChargingSpeeds, setAppliedChargingSpeeds] = useState<string[]>([]);
+  const [distanceKm, setDistanceKm] = useState(defaultDistanceKm);
+  const [appliedDistanceKm, setAppliedDistanceKm] = useState(defaultDistanceKm);
+  const [connectorTypeOptions, setConnectorTypeOptions] = useState<ConnectorTypeApiItem[]>([]);
+  const [speedTierOptions, setSpeedTierOptions] = useState<SpeedTierApiItem[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [stationsError, setStationsError] = useState<string | null>(null);
+  const [stationsLoading, setStationsLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [locationResolved, setLocationResolved] = useState(false);
+  const [mapView, setMapView] = useState<MapViewState>(defaultMapView);
+  const previousMapViewRef = useRef<MapViewState>(defaultMapView);
+  const previousResultsExpandedRef = useRef(false);
+  const selectedStationRef = useRef<Station | null>(selectedStation);
   const expandedRef = useRef(expanded);
+  useEffect(() => {
+    selectedStationRef.current = selectedStation;
+  }, [selectedStation]);
+
   useEffect(() => {
     expandedRef.current = expanded;
   }, [expanded]);
@@ -117,40 +125,179 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
   };
 
   useEffect(() => {
+    let mounted = true;
+
     (async () => {
       const coords = await getUserLocation();
-      if (coords) {
-        console.log('User coordinates:', coords.latitude, coords.longitude);
-        // TODO: API CALL HERE to load nearby SPKLU stations using the user's coordinates.
+      if (!mounted) {
+        return;
       }
+
+      setUserLocation(coords);
+      if (coords && !selectedStationRef.current) {
+        const userMapView = {
+          center: coords,
+          zoom: 14
+        };
+        setMapView(userMapView);
+        previousMapViewRef.current = userMapView;
+      }
+      setLocationResolved(true);
     })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
-  const selectedMarker = useMemo(
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadFilters() {
+      try {
+        const [nextConnectorTypes, nextSpeedTiers] = await Promise.all([
+          fetchConnectorTypes(),
+          fetchSpeedTiers()
+        ]);
+        if (mounted) {
+          setConnectorTypeOptions(nextConnectorTypes);
+          setSpeedTierOptions(nextSpeedTiers);
+        }
+      } catch (error) {
+        // ignore filter errors or handle if needed
+      }
+    }
+
+    loadFilters();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!locationResolved) {
+      return;
+    }
+
+    let mounted = true;
+
+    async function loadStations() {
+      setStationsLoading(true);
+      setStationsError(null);
+
+      try {
+        const nextStations = await loadSpkluStations({
+          chargingSpeeds: appliedChargingSpeeds,
+          connectorTypes: appliedConnectorTypes,
+          distanceKm: appliedDistanceKm,
+          userLocation
+        });
+
+        if (mounted) {
+          setStations(nextStations);
+        }
+      } catch (error) {
+        if (mounted) {
+          setStationsError(error instanceof Error ? error.message : 'Unable to load nearby SPKLU stations.');
+        }
+      } finally {
+        if (mounted) {
+          setStationsLoading(false);
+        }
+      }
+    }
+
+    loadStations();
+
+    return () => {
+      mounted = false;
+    };
+  }, [appliedChargingSpeeds, appliedConnectorTypes, appliedDistanceKm, locationResolved, userLocation]);
+
+  const connectorFilterOptions = useMemo<FilterOption[]>(
     () =>
-      selectedStation
-        ? [
-            {
-              id: selectedStation.id,
-              label: selectedStation.name,
-              latitude: selectedStation.latitude,
-              longitude: selectedStation.longitude
-            }
-          ]
-        : [],
-    [selectedStation]
+      connectorTypeOptions.map((connector) => ({
+        key: connector.name,
+        label: connector.name
+      })),
+    [connectorTypeOptions]
   );
+  const speedFilterOptions = useMemo<FilterOption[]>(
+    () =>
+      speedTierOptions.map((speedTier) => ({
+        key: speedTier.id,
+        label: speedTier.label,
+        description: `${formatPowerRange(speedTier)} - ${speedTier.count} stations`
+      })),
+    [speedTierOptions]
+  );
+
+  const stationMarkers = useMemo(
+    () =>
+      stations.map((station) => ({
+        id: station.id,
+        label: station.name,
+        latitude: station.latitude,
+        longitude: station.longitude
+      })),
+    [stations]
+  );
+  const stationMarkerIcon = useMemo(() => colorSvg(locationPinSvg, colors.text), []);
+  const detailSheetHeight = width < 768 ? Math.floor((height - bottomOffset) / 2) : undefined;
+  const filterSheetHeight = width < 768 ? getMobileFilterSheetHeight(height, topInset, bottomOffset) : undefined;
+  const openStationDetail = (station: Station) => {
+    if (!selectedStation) {
+      previousMapViewRef.current = mapView;
+      previousResultsExpandedRef.current = expanded;
+    }
+
+    animateNext();
+    setSelectedStation(station);
+    const latOffset = width < 768 ? 0.008 : 0;
+
+    setMapView({
+      center: {
+        latitude: station.latitude - latOffset,
+        longitude: station.longitude
+      },
+      zoom: 15
+    });
+    setDrawerMode('detail');
+    setExpanded(true);
+  };
+  const closeStationDetail = () => {
+    animateNext();
+    setSelectedStation(null);
+    setMapView(previousMapViewRef.current);
+    setDrawerMode('results');
+    setExpanded(previousResultsExpandedRef.current);
+  };
 
   return (
     <View style={styles.page}>
       <LeafletMap
-        center={selectedStation ? { latitude: selectedStation.latitude, longitude: selectedStation.longitude } : undefined}
-        markers={selectedMarker}
+        center={mapView.center}
+        currentLocation={userLocation}
+        markerIconSvg={stationMarkerIcon}
+        markers={stationMarkers}
+        onMarkerPress={(stationId) => {
+          const station = stations.find((currentStation) => currentStation.id === stationId);
+
+          if (!station) {
+            return;
+          }
+
+          openStationDetail(station);
+        }}
         showCurrentLocationPinpoint
-        zoom={selectedStation ? 15 : 13}
+        zoom={mapView.zoom}
       />
 
       <View style={[styles.searchBar, { top: 24 + topInset }]}>
-        <Text style={styles.searchIcon}>Q</Text>
+        <View style={styles.searchIcon}>
+          <SvgAssetIcon color="#6B7A7B" height={18} name="search" svg={searchIcon} width={18} />
+        </View>
         <TextInput
           accessibilityLabel="Search location"
           placeholder="Search location..."
@@ -167,11 +314,11 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           }}
           style={styles.filterIcon}
         >
-          <Text style={styles.filterIconText}>#</Text>
+          <SvgAssetIcon color="#005F64" height={18} svg={filterSettingIcon} width={18} />
         </Pressable>
       </View>
 
-        <View style={[styles.sheet, getSheetStateStyle(drawerMode, expanded), { bottom: bottomOffset }]} {...drawerPanResponder.panHandlers}>
+        <View style={[styles.sheet, getSheetStateStyle(drawerMode, expanded, detailSheetHeight, filterSheetHeight), { bottom: bottomOffset }]} {...drawerPanResponder.panHandlers}>
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded }}
@@ -187,11 +334,16 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           {drawerMode === 'filter' ? (
             <FilterDrawer
               chargingSpeeds={chargingSpeeds}
+              chargingSpeedOptions={speedFilterOptions}
               connectorTypes={connectorTypes}
+              connectorTypeOptions={connectorFilterOptions}
+              distanceKm={distanceKm}
               expanded={expanded}
               onApply={() => {
-                // TODO: API CALL HERE to refresh nearby SPKLU station list based on filters
                 animateNext();
+                setAppliedChargingSpeeds(chargingSpeeds);
+                setAppliedConnectorTypes(connectorTypes);
+                setAppliedDistanceKm(distanceKm);
                 setDrawerMode('results');
                 setSelectedStation(null);
                 setExpanded(true);
@@ -201,7 +353,17 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
                 setDrawerMode('results');
                 setExpanded(false);
               }}
-              onReset={() => resetFilters(setConnectorTypes, setChargingSpeeds)}
+              onReset={() => {
+                resetFilters(setConnectorTypes, setChargingSpeeds, setDistanceKm);
+                animateNext();
+                setAppliedChargingSpeeds([]);
+                setAppliedConnectorTypes([]);
+                setAppliedDistanceKm(defaultDistanceKm);
+                setDrawerMode('results');
+                setSelectedStation(null);
+                setExpanded(true);
+              }}
+              onSelectDistance={setDistanceKm}
               onToggleChargingSpeed={(key) => toggleSelected(key, chargingSpeeds, setChargingSpeeds)}
               onToggleConnectorType={(key) => toggleSelected(key, connectorTypes, setConnectorTypes)}
               onScroll={handleScroll}
@@ -211,30 +373,27 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           {drawerMode === 'results' ? (
             <ResultsDrawer
               expanded={expanded}
+              loading={stationsLoading}
               onFilter={() => {
                 animateNext();
                 setDrawerMode('filter');
                 setExpanded(true);
               }}
               onSelectStation={(station) => {
-                animateNext();
-                setSelectedStation(station);
-                setDrawerMode('detail');
-                setExpanded(true);
+                openStationDetail(station);
               }}
               onScroll={handleScroll}
+              stations={stations}
+              stationsError={stationsError}
             />
           ) : null}
 
           {drawerMode === 'detail' && selectedStation ? (
             <StationDetailDrawer
               expanded={expanded}
+              onScroll={handleScroll}
               station={selectedStation}
-              onClose={() => {
-                animateNext();
-                setDrawerMode('results');
-                setExpanded(true);
-              }}
+              onClose={closeStationDetail}
             />
           ) : null}
         </View>
@@ -244,11 +403,15 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
 
 type FilterDrawerProps = {
   chargingSpeeds: string[];
+  chargingSpeedOptions: FilterOption[];
   connectorTypes: string[];
+  connectorTypeOptions: FilterOption[];
+  distanceKm: number;
   expanded: boolean;
   onApply: () => void;
   onClose: () => void;
   onReset: () => void;
+  onSelectDistance: (distanceKm: number) => void;
   onToggleChargingSpeed: (key: string) => void;
   onToggleConnectorType: (key: string) => void;
   onScroll?: (e: any) => void;
@@ -256,11 +419,15 @@ type FilterDrawerProps = {
 
 function FilterDrawer({
   chargingSpeeds,
+  chargingSpeedOptions,
   connectorTypes,
+  connectorTypeOptions,
+  distanceKm,
   expanded,
   onApply,
   onClose,
   onReset,
+  onSelectDistance,
   onToggleChargingSpeed,
   onToggleConnectorType,
   onScroll
@@ -270,7 +437,7 @@ function FilterDrawer({
       <View style={styles.sheetHeader}>
         <Text style={styles.sheetTitle}>Filter</Text>
         <Pressable accessibilityLabel="Close filter" accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeText}>X</Text>
+          <SvgAssetIcon color="#191C1D" height={14} svg={closeButtonIcon} width={14} />
         </Pressable>
       </View>
 
@@ -283,12 +450,7 @@ function FilterDrawer({
         >
           <FilterCategory
             title="Connector Type"
-            options={[
-              { key: 'ccs2', label: 'CCS 2' },
-              { key: 'sae', label: 'SAE J1772' },
-              { key: 'ac_type_2', label: 'AC Type 2' },
-              { key: 'chademo', label: 'CHAdeMO' }
-            ]}
+            options={connectorTypeOptions}
             selectedKeys={connectorTypes}
             onToggle={onToggleConnectorType}
           />
@@ -296,11 +458,7 @@ function FilterDrawer({
           <FilterCategory
             title="Charging Speed"
             variant="card"
-            options={[
-              { key: 'slow', label: 'Slow', description: 'Up to 7 kW' },
-              { key: 'fast', label: 'Fast', description: '22 - 50 kW' },
-              { key: 'ultra', label: 'Ultra', description: 'Over 50 kW' }
-            ]}
+            options={chargingSpeedOptions}
             selectedKeys={chargingSpeeds}
             onToggle={onToggleChargingSpeed}
           />
@@ -308,17 +466,25 @@ function FilterDrawer({
           <View style={styles.distanceSection}>
             <View style={styles.distanceHeader}>
               <Text style={styles.categoryTitle}>Distance</Text>
-              <Text style={styles.distanceValue}>8 km</Text>
+              <Text style={styles.distanceValue}>{distanceKm} km</Text>
             </View>
-            <View style={styles.sliderTrack}>
-              <View style={styles.sliderFill} />
-              <View style={styles.sliderThumb} />
-            </View>
+            <PlatformSlider
+              style={{ width: '100%', height: 40, marginTop: 8 }}
+              minimumValue={0}
+              maximumValue={distanceOptions.length - 1}
+              step={1}
+              value={distanceOptions.indexOf(distanceKm as any) >= 0 ? distanceOptions.indexOf(distanceKm as any) : 0}
+              onValueChange={(value) => onSelectDistance(distanceOptions[value])}
+              minimumTrackTintColor="#0bb2b2"
+              maximumTrackTintColor="#dde5e8"
+              thumbTintColor="#0bb2b2"
+            />
             <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabel}>3 km</Text>
-              <Text style={styles.sliderLabel}>5 km</Text>
-              <Text style={styles.sliderLabel}>8 km</Text>
-              <Text style={styles.sliderLabel}>10 km</Text>
+              {distanceOptions.map((option) => (
+                <Pressable accessibilityRole="button" key={option} onPress={() => onSelectDistance(option)}>
+                  <Text style={[styles.sliderLabel, option === distanceKm && styles.sliderLabelSelected]}>{option} km</Text>
+                </Pressable>
+              ))}
             </View>
           </View>
         </ScrollView>
@@ -338,18 +504,21 @@ function FilterDrawer({
 
 type ResultsDrawerProps = {
   expanded: boolean;
+  loading: boolean;
   onFilter: () => void;
   onSelectStation: (station: Station) => void;
   onScroll?: (e: any) => void;
+  stations: Station[];
+  stationsError: string | null;
 };
 
-function ResultsDrawer({ expanded, onFilter, onSelectStation, onScroll }: ResultsDrawerProps) {
+function ResultsDrawer({ expanded, loading, onFilter, onSelectStation, onScroll, stations, stationsError }: ResultsDrawerProps) {
   return (
     <View style={styles.drawerBody}>
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsTitle}>Nearby SPKLU Stations</Text>
         <Pressable accessibilityRole="button" onPress={onFilter} style={styles.filterButton}>
-          <Text style={styles.filterButtonIcon}>#</Text>
+          <SvgAssetIcon color="#4c5960" height={14} svg={filterSettingIcon} width={14} />
           <Text style={styles.filterButtonText}>Filter</Text>
         </Pressable>
       </View>
@@ -361,9 +530,12 @@ function ResultsDrawer({ expanded, onFilter, onSelectStation, onScroll }: Result
           onScroll={onScroll}
           scrollEventThrottle={16}
         >
-          {stations.map((station) => (
-            <StationCard key={station.id} station={station} onPress={() => onSelectStation(station)} />
-          ))}
+          {loading ? <Text style={styles.stationAddress}>Loading nearby SPKLU stations...</Text> : null}
+          {!loading && stationsError ? <Text style={styles.stationAddress}>{stationsError}</Text> : null}
+          {!loading && !stationsError && stations.length === 0 ? <Text style={styles.stationAddress}>No nearby SPKLU stations found.</Text> : null}
+          {!loading && !stationsError
+            ? stations.map((station) => <StationCard key={station.id} station={station} onPress={() => onSelectStation(station)} />)
+            : null}
         </ScrollView>
       </View>
     </View>
@@ -374,9 +546,10 @@ type StationDetailDrawerProps = {
   expanded: boolean;
   station: Station;
   onClose: () => void;
+  onScroll?: (e: any) => void;
 };
 
-function StationDetailDrawer({ expanded, station, onClose }: StationDetailDrawerProps) {
+function StationDetailDrawer({ expanded, station, onClose, onScroll }: StationDetailDrawerProps) {
   return (
     <View style={styles.drawerBody}>
       <View style={styles.sheetHeader}>
@@ -384,17 +557,24 @@ function StationDetailDrawer({ expanded, station, onClose }: StationDetailDrawer
           {station.name.replace(' Hub', '')}
         </Text>
         <Pressable accessibilityLabel="Close station detail" accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeText}>X</Text>
+          <SvgAssetIcon color="#191C1D" height={14} svg={closeButtonIcon} width={14} />
         </Pressable>
       </View>
 
       <View style={[styles.expandedContent, getExpandedContentStateStyle(expanded)]}>
-        <Text style={styles.stationAddress}>{station.address}</Text>
-        <View style={styles.connectorList}>
-          {station.connectors.map((connector) => (
-            <ConnectorRow connector={connector} key={connector.label} />
-          ))}
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.stationDetailContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
+          <Text style={styles.stationAddress}>{station.address}</Text>
+          <View style={styles.connectorList}>
+            {station.connectors.map((connector) => (
+              <ConnectorRow connector={connector} key={connector.label} />
+            ))}
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -410,6 +590,7 @@ function StationCard({ station, onPress }: StationCardProps) {
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.stationCard}>
       <Text style={styles.stationName}>{station.name}</Text>
       <Text style={styles.stationAddress}>{station.address}</Text>
+      {station.distanceKm !== undefined ? <Text style={styles.connectorSpeed}>{station.distanceKm.toFixed(1)} km away</Text> : null}
       <View style={styles.connectorList}>
         {station.connectors.map((connector) => (
           <ConnectorRow connector={connector} key={connector.label} />
@@ -428,7 +609,7 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
     <View style={styles.connectorRow}>
       <View style={styles.connectorLeft}>
         <View style={styles.connectorIcon}>
-          <Text style={styles.connectorIconText}>⚡</Text>
+          <SvgAssetIcon color="#00696F" height={17} name="lightning" svg={lightningIcon} width={15} />
         </View>
         <Text style={styles.connectorName}>{connector.label}</Text>
       </View>
@@ -441,15 +622,140 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
   );
 }
 
+type LoadSpkluStationsOptions = {
+  chargingSpeeds?: string[];
+  connectorTypes?: string[];
+  distanceKm?: number;
+  userLocation?: Coordinates | null;
+};
 
+async function loadSpkluStations({
+  chargingSpeeds = [],
+  connectorTypes = [],
+  distanceKm,
+  userLocation
+}: LoadSpkluStationsOptions = {}) {
+  const connectorFilters = connectorTypes.filter(Boolean);
+  const speedFilters = chargingSpeeds.filter(Boolean);
+  const isReset = connectorFilters.length === 0 && speedFilters.length === 0 && distanceKm === defaultDistanceKm;
+
+  if (isReset || !userLocation) {
+    const response = await fetchStations({ limit: 1000 });
+    const stationsById = new Map<string, Station>();
+    response.items.forEach((item) => {
+      const station = toStation(item);
+      stationsById.set(station.id, station);
+    });
+    return Array.from(stationsById.values());
+  }
+
+  const response = await fetchNearbyStations({
+    lat: userLocation.latitude,
+    lon: userLocation.longitude,
+    radius: distanceKm ?? defaultDistanceKm,
+    connectorType: connectorFilters.length ? connectorFilters.join(',') : undefined,
+    speedTier: speedFilters.length ? speedFilters.join(',') : undefined,
+    limit: 200
+  });
+
+  const stationsById = new Map<string, Station>();
+  response.forEach((item) => {
+    const station = toStation(item);
+    stationsById.set(station.id, station);
+  });
+  return Array.from(stationsById.values()).sort((left, right) => (left.distanceKm ?? 0) - (right.distanceKm ?? 0));
+}
+
+function toStation(item: StationApiItem): Station {
+  const addressParts = [item.address, item.city, item.province].filter(Boolean);
+  const connectorLabels = item.connector_types.length ? item.connector_types : ['Unknown connector'];
+
+  return {
+    id: item.id,
+    address: addressParts.join(', ') || 'Address not available',
+    connectors: connectorLabels.map((label) => ({
+      label,
+      speed: formatSpeedTier(item.speed_tier),
+      total: item.connectors ?? 1
+    })),
+    distanceKm: item.distance_km ?? undefined,
+    latitude: item.latitude,
+    longitude: item.longitude,
+    name: item.name ?? 'Unnamed SPKLU Station'
+  };
+}
+
+function formatSpeedTier(speedTier: string | null) {
+  if (!speedTier) {
+    return 'UNKNOWN';
+  }
+
+  return speedTier.replace(/_/g, '-').toUpperCase();
+}
+
+function formatPowerRange(speedTier: SpeedTierApiItem) {
+  if (speedTier.max_kw === null) {
+    return `Over ${formatKw(speedTier.min_kw)} kW`;
+  }
+
+  if (speedTier.min_kw === 0) {
+    return `Up to ${formatKw(speedTier.max_kw)} kW`;
+  }
+
+  return `${formatKw(speedTier.min_kw)} - ${formatKw(speedTier.max_kw)} kW`;
+}
+
+function formatKw(value: number) {
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
+function toBoundingBox(center: Coordinates, radiusKm: number) {
+  const latDelta = radiusKm / 111;
+  const lonDelta = radiusKm / (111 * Math.cos((center.latitude * Math.PI) / 180));
+
+  return [
+    center.longitude - lonDelta,
+    center.latitude - latDelta,
+    center.longitude + lonDelta,
+    center.latitude + latDelta
+  ].join(',');
+}
+
+function colorSvg(svg: string, color: string) {
+  return svg
+    .replace(/<path /g, `<path fill="${color}" `)
+    .replace('<svg ', '<svg width="30" height="34" style="display:block" ');
+}
+
+function getDistancePercent(distanceKm: number) {
+  const index = distanceOptions.findIndex((option) => option === distanceKm);
+  const fallbackIndex = distanceOptions.findIndex((option) => option === defaultDistanceKm);
+  const safeIndex = index >= 0 ? index : fallbackIndex;
+
+  return (safeIndex / (distanceOptions.length - 1)) * 100;
+}
+
+function getMobileFilterSheetHeight(screenHeight: number, topInset: number, bottomOffset: number) {
+  const searchBarBottom = topInset + 24 + 66 + 12;
+  const availableMapHeight = screenHeight - bottomOffset;
+  const maxHeightWithSearchVisible = screenHeight - bottomOffset - searchBarBottom;
+  const cappedHeight = Math.min(availableMapHeight * 0.95, maxHeightWithSearchVisible);
+
+  return Math.max(104, Math.floor(cappedHeight));
+}
 
 function toggleSelected(key: string, selectedKeys: string[], setSelectedKeys: (keys: string[]) => void) {
   setSelectedKeys(selectedKeys.includes(key) ? selectedKeys.filter((selectedKey) => selectedKey !== key) : [...selectedKeys, key]);
 }
 
-function resetFilters(setConnectorTypes: (keys: string[]) => void, setChargingSpeeds: (keys: string[]) => void) {
+function resetFilters(
+  setConnectorTypes: (keys: string[]) => void,
+  setChargingSpeeds: (keys: string[]) => void,
+  setDistanceKm: (distanceKm: number) => void
+) {
   setConnectorTypes([]);
   setChargingSpeeds([]);
+  setDistanceKm(defaultDistanceKm);
 }
 
 function updateSheetSizeFromDelta(deltaY: number, setExpanded: React.Dispatch<React.SetStateAction<boolean>>) {
@@ -473,10 +779,10 @@ type WebTransitionStyle = ViewStyle & {
   transitionTimingFunction?: string;
 };
 
-function getSheetStateStyle(mode: DrawerMode, expanded: boolean): WebTransitionStyle {
+function getSheetStateStyle(mode: DrawerMode, expanded: boolean, detailSheetHeight?: number, filterSheetHeight?: number): WebTransitionStyle {
   const expandedHeights: Record<DrawerMode, number> = {
-    detail: 254,
-    filter: 430,
+    detail: detailSheetHeight ?? 254,
+    filter: filterSheetHeight ?? 430,
     results: 650
   };
 

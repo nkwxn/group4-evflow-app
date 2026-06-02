@@ -309,11 +309,21 @@ export const loginScreenStyles = StyleSheet.create({
     shadowRadius: 5,
     width: 64
   },
+  logoWrap: {
+    alignItems: 'center',
+    height: 64,
+    justifyContent: 'center',
+    width: 64
+  },
   logoBolt: {
     color: colors.white,
     fontSize: fontSizes.logo,
     fontWeight: '900',
     lineHeight: 34
+  },
+  logoImage: {
+    height: 64,
+    width: 64
   },
   appTitle: {
     color: '#1f2529',
@@ -562,13 +572,303 @@ export const profileSelectionStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.primary,
     borderRadius: 7,
+    flexDirection: 'row',
+    gap: 10,
     justifyContent: 'center',
     minHeight: 57
   },
   continueText: {
-    color: colors.text,
+    color: colors.white,
     fontSize: fontSizes.bodyLarge,
     fontWeight: '500'
+  }
+});
+
+export const registrationScreenStyles = StyleSheet.create({
+  page: {
+    backgroundColor: colors.background,
+    flex: 1,
+    minHeight: '100%'
+  },
+  header: {
+    borderBottomColor: '#dce4e8',
+    borderBottomWidth: 1,
+    minHeight: 64,
+    justifyContent: 'center',
+    paddingHorizontal: 20
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 42
+  },
+  backText: {
+    color: colors.text,
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '600'
+  },
+  content: {
+    gap: 18,
+    marginHorizontal: 'auto',
+    maxWidth: layout.authPageMaxWidth,
+    paddingHorizontal: 20,
+    paddingTop: 32,
+    width: '100%'
+  },
+  title: {
+    color: '#1f2529',
+    fontSize: fontSizes.title,
+    fontWeight: '900',
+    lineHeight: 30
+  },
+  subtitle: {
+    color: '#4b555a',
+    fontSize: fontSizes.control,
+    lineHeight: 20,
+    marginTop: -12
+  },
+  fieldGroup: {
+    gap: 8,
+    width: '100%'
+  },
+  label: {
+    color: '#1f2529',
+    fontSize: fontSizes.caption,
+    fontWeight: '900',
+    lineHeight: 16
+  },
+  input: {
+    backgroundColor: colors.white,
+    borderColor: '#d8e1e7',
+    borderRadius: 8,
+    borderWidth: 1,
+    color: '#1f2529',
+    fontSize: fontSizes.bodyLarge,
+    minHeight: 48,
+    paddingHorizontal: 16
+  },
+  select: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: '#d8e1e7',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    minHeight: 48,
+    paddingHorizontal: 16
+  },
+  selectText: {
+    color: '#1f2529',
+    flex: 1,
+    fontSize: fontSizes.bodyLarge
+  },
+  placeholderText: {
+    color: '#1f2529'
+  },
+  chevron: {
+    color: '#4b555a',
+    fontSize: fontSizes.icon,
+    fontWeight: '900'
+  },
+  selectMenu: {
+    backgroundColor: colors.white,
+    borderColor: '#d8e1e7',
+    borderRadius: 8,
+    borderWidth: 1,
+    maxHeight: 220
+  },
+  selectOption: {
+    borderBottomColor: '#edf2f4',
+    borderBottomWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10
+  },
+  selectedSelectOption: {
+    backgroundColor: '#e9fbfc'
+  },
+  selectOptionText: {
+    color: '#1f2529',
+    fontSize: fontSizes.control,
+    fontWeight: '800',
+    lineHeight: 18
+  },
+  selectOptionMeta: {
+    color: '#6b767b',
+    fontSize: fontSizes.caption,
+    lineHeight: 16,
+    marginTop: 2
+  },
+  connectorRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10
+  },
+  connectorPill: {
+    alignItems: 'center',
+    backgroundColor: '#f5f8f9',
+    borderColor: '#d8e1e7',
+    borderRadius: 999,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 17
+  },
+  selectedConnectorPill: {
+    backgroundColor: '#e9fbfc',
+    borderColor: colors.primary,
+    borderWidth: 2
+  },
+  connectorText: {
+    color: '#1f2529',
+    fontSize: fontSizes.bodyLarge,
+    lineHeight: 20
+  },
+  selectedConnectorText: {
+    color: colors.text,
+    fontWeight: '800'
+  },
+  thresholdHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  thresholdValue: {
+    color: colors.text,
+    fontSize: fontSizes.control,
+    fontWeight: '900'
+  },
+  helperText: {
+    color: '#4b555a',
+    fontSize: fontSizes.tiny,
+    lineHeight: 16,
+    marginTop: -5
+  },
+  thresholdTrack: {
+    backgroundColor: '#dde5e8',
+    borderRadius: 999,
+    height: 7,
+    justifyContent: 'center',
+    marginTop: 16
+  },
+  thresholdFill: {
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    height: 7
+  },
+  thresholdThumb: {
+    backgroundColor: colors.primary,
+    borderColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 2,
+    height: 20,
+    position: 'absolute',
+    transform: [{ translateX: -10 }],
+    width: 20
+  },
+  thresholdHitRow: {
+    bottom: -14,
+    flexDirection: 'row',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: -14
+  },
+  thresholdHitTarget: {
+    flex: 1
+  },
+  thresholdLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  thresholdLabel: {
+    color: '#4b555a',
+    fontSize: fontSizes.tiny,
+    lineHeight: 16
+  },
+  permissionCard: {
+    alignItems: 'flex-start',
+    backgroundColor: '#dffbfc',
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16
+  },
+  checkbox: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: '#b7dfe2',
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 20,
+    justifyContent: 'center',
+    marginTop: 1,
+    width: 20
+  },
+  checkedBox: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary
+  },
+  checkText: {
+    color: colors.white,
+    fontSize: fontSizes.caption,
+    fontWeight: '900',
+    lineHeight: 16
+  },
+  permissionTextWrap: {
+    flex: 1,
+    gap: 10
+  },
+  permissionTitle: {
+    color: colors.text,
+    fontSize: fontSizes.caption,
+    fontWeight: '900',
+    lineHeight: 18
+  },
+  permissionBody: {
+    color: '#4b555a',
+    fontSize: fontSizes.caption,
+    lineHeight: 18
+  },
+  registerButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 6,
+    minHeight: 56
+  },
+  registerButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '900'
+  },
+  loginPrompt: {
+    color: '#4b555a',
+    fontSize: fontSizes.control,
+    lineHeight: 20,
+    marginTop: 14,
+    textAlign: 'center'
+  },
+  loginLink: {
+    color: colors.text,
+    fontWeight: '800'
+  },
+  homeIndicator: {
+    alignSelf: 'center',
+    backgroundColor: '#c9d0d3',
+    borderRadius: 999,
+    height: 4,
+    marginTop: 8,
+    width: 130
+  },
+  poweredBy: {
+    color: '#b6bfc4',
+    fontSize: fontSizes.eyebrow,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    lineHeight: 16,
+    marginTop: 22,
+    textAlign: 'center'
   }
 });
 
@@ -682,7 +982,13 @@ export const filterCategoryStyles = StyleSheet.create({
     minHeight: 60,
     paddingHorizontal: 13,
     paddingVertical: 12,
+    position: 'relative',
     width: '48%'
+  },
+  cardTickIcon: {
+    position: 'absolute',
+    right: 10,
+    top: 10
   },
   cardLabel: {
     color: '#1f2529',
@@ -722,9 +1028,10 @@ export const driverMapStyles = StyleSheet.create({
     zIndex: 9999
   },
   searchIcon: {
-    color: '#64757c',
-    fontSize: fontSizes.heading,
-    fontWeight: '800'
+    alignItems: 'center',
+    height: 18,
+    justifyContent: 'center',
+    width: 18
   },
   searchInput: {
     color: '#1f2529',
@@ -844,7 +1151,19 @@ export const driverMapStyles = StyleSheet.create({
     height: 18,
     left: '64%',
     position: 'absolute',
+    transform: [{ translateX: -9 }],
     width: 18
+  },
+  sliderHitRow: {
+    bottom: -16,
+    flexDirection: 'row',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: -16
+  },
+  sliderHitTarget: {
+    flex: 1
   },
   sliderLabels: {
     flexDirection: 'row',
@@ -855,6 +1174,10 @@ export const driverMapStyles = StyleSheet.create({
     color: '#4c5960',
     fontSize: fontSizes.eyebrow,
     lineHeight: 14
+  },
+  sliderLabelSelected: {
+    color: colors.text,
+    fontWeight: '900'
   },
   actionRow: {
     flexDirection: 'row',
@@ -950,6 +1273,10 @@ export const driverMapStyles = StyleSheet.create({
   connectorList: {
     gap: 6,
     marginTop: 4
+  },
+  stationDetailContent: {
+    gap: 12,
+    paddingBottom: 24
   },
   connectorRow: {
     alignItems: 'center',

@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { colors, profileSelectionStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import rightArrowIcon from '../assets/images/right-arrow-pointed.svg?raw';
+import { SvgAssetIcon } from '../shared/SvgAssetIcon';
 import { RoleAssetIcon } from './components/RoleAssetIcon';
 import type { UserRole } from './types';
 
@@ -18,7 +20,7 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
     <View style={styles.page}>
       <View style={styles.contentShell}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
-          <Pressable accessibilityLabel="Kembali" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
+          <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
             <Text style={styles.backIcon}>‹</Text>
           </Pressable>
           <Text style={styles.brand}>EV-FLOW</Text>
@@ -26,30 +28,31 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
         </View>
 
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 120 + insets.bottom }]}>
-          <Text style={styles.title}>Selesaikan Profil Anda</Text>
+          <Text style={styles.title}>Complete Your Profile</Text>
           <Text style={styles.subtitle}>
-            Pilih jenis akun untuk menyesuaikan pengalaman berkendara atau perencanaan Anda.
+            Choose an account type to customize your driving or planning experience.
           </Text>
 
           <RoleCard
-            description="Cari SPKLU terdekat, filter tipe konektor (CCS2/AC Type 2), rencanakan rute perjalanan, dan pantau pengisian daya real-time."
+            description="Find the nearest charging stations (SPKLU), filter by connector type (CCS2/AC Type 2), plan your travel route, and monitor real-time charging."
             role="driver"
             selected={selectedRole === 'driver'}
-            title="Pengemudi EV (Driver)"
+            title="EV User (Driver)"
             onPress={() => onSelectRole('driver')}
           />
           <RoleCard
-            description="Akses dashboard VoltGrid, analisis data spasial BPS, petakan demand hotspot, dan optimalkan lokasi penempatan SPKLU baru di Jabodetabek."
+            description="Access the VoltGrid dashboard, analyze BPS spatial data, map demand hotspots, and optimize the location of new SPKLUs in Jakarta."
             role="operator"
             selected={selectedRole === 'operator'}
-            title="Operator & Planner"
+            title="Business Planner"
             onPress={() => onSelectRole('operator')}
           />
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: 20 + insets.bottom }]}>
           <Pressable accessibilityRole="button" onPress={onContinue} style={styles.continueButton}>
-            <Text style={styles.continueText}>Lanjutkan ke Aplikasi {'->'}</Text>
+            <Text style={styles.continueText}>Continue to register</Text>
+            <SvgAssetIcon height={16} svg={rightArrowIcon} width={16} />
           </Pressable>
         </View>
       </View>

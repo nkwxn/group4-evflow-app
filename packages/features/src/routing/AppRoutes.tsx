@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router';
 import { EVDriverContainer } from '../ev_driver/EVDriverContainer';
 import { LoginScreen } from '../login/LoginScreen';
 import { ProfileSelectionScreen } from '../profile_selection/ProfileSelectionScreen';
+import { RegistrationScreen } from '../registration/RegistrationScreen';
 import type { UserRole } from '../profile_selection/types';
 
 export function AppRoutes() {
@@ -15,6 +16,7 @@ export function AppRoutes() {
         path="/profile-selection"
         element={<ProfileSelectionRoute selectedRole={selectedRole} onSelectRole={setSelectedRole} />}
       />
+      <Route path="/register" element={<RegistrationRoute />} />
       <Route path="/ev-driver" element={<Navigate replace to="/ev-driver/map" />} />
       <Route path="/ev-driver/:tab" element={<EVDriverContainer />} />
       <Route path="*" element={<Navigate replace to="/" />} />
@@ -25,7 +27,7 @@ export function AppRoutes() {
 function LoginRoute() {
   const navigate = useNavigate();
 
-  return <LoginScreen onLogin={() => navigate('/profile-selection')} />;
+  return <LoginScreen onLogin={() => navigate('/ev-driver')} onRegister={() => navigate('/profile-selection')} />;
 }
 
 type ProfileSelectionRouteProps = {
@@ -40,12 +42,20 @@ function ProfileSelectionRoute({ selectedRole, onSelectRole }: ProfileSelectionR
     <ProfileSelectionScreen
       selectedRole={selectedRole}
       onBack={() => navigate('/')}
-      onContinue={() => {
-        if (selectedRole === 'driver') {
-          navigate('/ev-driver');
-        }
-      }}
+      onContinue={() => navigate('/register')}
       onSelectRole={onSelectRole}
+    />
+  );
+}
+
+function RegistrationRoute() {
+  const navigate = useNavigate();
+
+  return (
+    <RegistrationScreen
+      onBack={() => navigate('/profile-selection')}
+      onLogin={() => navigate('/ev-driver')}
+      onRegister={() => navigate('/ev-driver')}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { leafletMapStyles as styles } from '../styles/styles';
 
 type LeafletMapProps = {
@@ -9,7 +9,13 @@ type LeafletMapProps = {
     latitude: number;
     longitude: number;
   };
+  currentLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  markerIconSvg?: string;
   markers?: LeafletMapMarker[];
+  onMarkerPress?: (markerId: string) => void;
   showCurrentLocationPinpoint?: boolean;
   zoom?: number;
 };
@@ -31,7 +37,15 @@ type Coordinates = {
   longitude: number;
 };
 
-export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLocationPinpoint = false, zoom = 13 }: LeafletMapProps) {
+export function LeafletMap({
+  center = defaultCenter,
+  currentLocation,
+  markerIconSvg,
+  markers = [],
+  onMarkerPress,
+  showCurrentLocationPinpoint = false,
+  zoom = 13
+}: LeafletMapProps) {
   const webViewRef = useRef<WebView>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const html = useMemo(
@@ -45,6 +59,7 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
         <style>
           body { padding: 0; margin: 0; background-color: #d7dbdc; }
           html, body, #map { height: 100%; width: 100%; }
+          .evflow-station-marker svg { display: block; filter: drop-shadow(0 3px 5px rgba(0, 86, 95, 0.28)); }
         </style>
       </head>
       <body>
@@ -61,16 +76,27 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
             attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
           }).addTo(map);
 
+          var stationIcon = ${markerIconSvg ? `L.divIcon({ className: 'evflow-station-marker', html: ${JSON.stringify(markerIconSvg)}, iconSize: [30, 34], iconAnchor: [15, 34], popupAnchor: [0, -30] })` : 'null'};
+
           ${markers
             .map(
               (marker) => `
-          L.circleMarker([${marker.latitude}, ${marker.longitude}], {
-            color: '#ffffff',
-            fillColor: '#007a80',
-            fillOpacity: 1,
-            radius: 10,
-            weight: 3
-          }).addTo(map).bindPopup(${JSON.stringify(marker.label ?? 'Selected station')});
+          var marker_${marker.id.replace(/[^a-zA-Z0-9_]/g, '_')} = stationIcon
+            ? L.marker([${marker.latitude}, ${marker.longitude}], { icon: stationIcon }).addTo(map)
+            : L.circleMarker([${marker.latitude}, ${marker.longitude}], {
+                color: '#ffffff',
+                fillColor: '#007a80',
+                fillOpacity: 1,
+                radius: 10,
+                weight: 3
+              }).addTo(map);
+          marker_${marker.id.replace(/[^a-zA-Z0-9_]/g, '_')}
+            .bindPopup(${JSON.stringify(marker.label ?? 'Selected station')})
+            .on('click', function() {
+              window.ReactNativeWebView && window.ReactNativeWebView.postMessage(${JSON.stringify(
+                JSON.stringify({ type: 'markerPress', markerId: marker.id })
+              )});
+            });
           `
             )
             .join('')}
@@ -90,19 +116,28 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
             } else {
               userMarker.setLatLng(coordinates);
             }
-
-            map.setView(coordinates, Math.max(${zoom}, 14));
           };
+
+          ${
+            currentLocation
+              ? `window.setUserLocation(${currentLocation.latitude}, ${currentLocation.longitude});`
+              : ''
+          }
           
           // Re-center map when props change via reloading html
         </script>
       </body>
     </html>
   `,
-    [center.latitude, center.longitude, markers, zoom]
+    [center.latitude, center.longitude, currentLocation, markerIconSvg, markers, zoom]
   );
 
   useEffect(() => {
+    if (currentLocation) {
+      setUserLocation(currentLocation);
+      return;
+    }
+
     if (!showCurrentLocationPinpoint) {
       return;
     }
@@ -133,7 +168,7 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
     return () => {
       mounted = false;
     };
-  }, [showCurrentLocationPinpoint]);
+  }, [currentLocation, showCurrentLocationPinpoint]);
 
   useEffect(() => {
     if (!userLocation) {
@@ -146,6 +181,18 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
     `);
   }, [userLocation]);
 
+  function handleMessage(event: WebViewMessageEvent) {
+    try {
+      const message = JSON.parse(event.nativeEvent.data) as { type?: string; markerId?: string };
+
+      if (message.type === 'markerPress' && message.markerId) {
+        onMarkerPress?.(message.markerId);
+      }
+    } catch {
+      // Ignore non-map messages.
+    }
+  }
+
   return (
     <View style={styles.container}>
       <WebView 
@@ -155,6 +202,7 @@ export function LeafletMap({ center = defaultCenter, markers = [], showCurrentLo
         style={styles.map} 
         scrollEnabled={false}
         bounces={false}
+        onMessage={handleMessage}
       />
     </View>
   );
