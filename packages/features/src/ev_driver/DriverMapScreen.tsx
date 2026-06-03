@@ -67,8 +67,8 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [connectorTypes, setConnectorTypes] = useState<string[]>([]);
   const [chargingSpeeds, setChargingSpeeds] = useState<string[]>([]);
-  const [appliedConnectorTypes, setAppliedConnectorTypes] = useState<string[]>([]);
-  const [appliedChargingSpeeds, setAppliedChargingSpeeds] = useState<string[]>([]);
+  const [appliedConnectorTypes, setAppliedConnectorTypes] = useState<ConnectorTypeApiItem[]>([]);
+  const [appliedChargingSpeeds, setAppliedChargingSpeeds] = useState<SpeedTierApiItem[]>([]);
   const [distanceKm, setDistanceKm] = useState(defaultDistanceKm);
   const [appliedDistanceKm, setAppliedDistanceKm] = useState(defaultDistanceKm);
   const [connectorTypeOptions, setConnectorTypeOptions] = useState<ConnectorTypeApiItem[]>([]);
@@ -341,8 +341,8 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
               expanded={expanded}
               onApply={() => {
                 animateNext();
-                setAppliedChargingSpeeds(chargingSpeeds);
-                setAppliedConnectorTypes(connectorTypes);
+                setAppliedChargingSpeeds(getSelectedSpeedTiers(chargingSpeeds, speedTierOptions));
+                setAppliedConnectorTypes(getSelectedConnectorTypes(connectorTypes, connectorTypeOptions));
                 setAppliedDistanceKm(distanceKm);
                 setDrawerMode('results');
                 setSelectedStation(null);
@@ -623,8 +623,8 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
 }
 
 type LoadSpkluStationsOptions = {
-  chargingSpeeds?: string[];
-  connectorTypes?: string[];
+  chargingSpeeds?: SpeedTierApiItem[];
+  connectorTypes?: ConnectorTypeApiItem[];
   distanceKm?: number;
   userLocation?: Coordinates | null;
 };
@@ -635,12 +635,16 @@ async function loadSpkluStations({
   distanceKm,
   userLocation
 }: LoadSpkluStationsOptions = {}) {
-  const connectorFilters = connectorTypes.filter(Boolean);
-  const speedFilters = chargingSpeeds.filter(Boolean);
+  const connectorFilters = connectorTypes.filter((connector) => connector.name);
+  const speedFilters = chargingSpeeds.filter((speedTier) => speedTier.id);
   const isReset = connectorFilters.length === 0 && speedFilters.length === 0 && distanceKm === defaultDistanceKm;
 
   if (isReset || !userLocation) {
-    const response = await fetchStations({ limit: 1000 });
+    const response = await fetchStations({
+      connectorType: connectorFilters,
+      limit: defaultStationLimit,
+      speedTier: speedFilters
+    });
     const stationsById = new Map<string, Station>();
     response.items.forEach((item) => {
       const station = toStation(item);
@@ -653,8 +657,8 @@ async function loadSpkluStations({
     lat: userLocation.latitude,
     lon: userLocation.longitude,
     radius: distanceKm ?? defaultDistanceKm,
-    connectorType: connectorFilters.length ? connectorFilters.join(',') : undefined,
-    speedTier: speedFilters.length ? speedFilters.join(',') : undefined,
+    connectorType: connectorFilters,
+    speedTier: speedFilters,
     limit: 200
   });
 
@@ -746,6 +750,22 @@ function getMobileFilterSheetHeight(screenHeight: number, topInset: number, bott
 
 function toggleSelected(key: string, selectedKeys: string[], setSelectedKeys: (keys: string[]) => void) {
   setSelectedKeys(selectedKeys.includes(key) ? selectedKeys.filter((selectedKey) => selectedKey !== key) : [...selectedKeys, key]);
+}
+
+function getSelectedConnectorTypes(selectedKeys: string[], options: ConnectorTypeApiItem[]) {
+  const optionsByName = new Map(options.map((option) => [option.name, option]));
+
+  return selectedKeys
+    .map((key) => optionsByName.get(key))
+    .filter((option): option is ConnectorTypeApiItem => Boolean(option));
+}
+
+function getSelectedSpeedTiers(selectedKeys: string[], options: SpeedTierApiItem[]) {
+  const optionsById = new Map(options.map((option) => [option.id, option]));
+
+  return selectedKeys
+    .map((key) => optionsById.get(key))
+    .filter((option): option is SpeedTierApiItem => Boolean(option));
 }
 
 function resetFilters(

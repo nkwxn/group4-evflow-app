@@ -17,11 +17,22 @@ export function createApiClient({ baseUrl, fetcher = fetch }: ApiClientOptions) 
   return { get };
 }
 
-export function toQueryString(params: Record<string, string | number | boolean | null | undefined>) {
+type QueryParamValue = string | number | boolean;
+
+export function toQueryString(params: Record<string, QueryParamValue | QueryParamValue[] | null | undefined>) {
   const query = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item !== '') {
+          query.append(key, String(item));
+        }
+      });
       return;
     }
 

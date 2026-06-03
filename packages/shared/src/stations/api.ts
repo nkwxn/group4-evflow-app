@@ -38,8 +38,8 @@ export type StationListParams = {
   q?: string;
   minPower?: number;
   maxPower?: number;
-  connectorType?: string;
-  speedTier?: string;
+  connectorType?: ConnectorTypeApiItem[];
+  speedTier?: SpeedTierApiItem[];
   bbox?: string;
   limit?: number;
   offset?: number;
@@ -49,8 +49,8 @@ export type NearbyStationListParams = {
   lat: number;
   lon: number;
   radius: number;
-  connectorType?: string;
-  speedTier?: string;
+  connectorType?: ConnectorTypeApiItem[];
+  speedTier?: SpeedTierApiItem[];
   limit?: number;
 };
 
@@ -75,8 +75,8 @@ export async function fetchStations(params: StationListParams = {}, fetcher: typ
     q: params.q,
     min_power: params.minPower,
     max_power: params.maxPower,
-    connector_type: params.connectorType,
-    speed_tier: params.speedTier,
+    connector_type: params.connectorType?.map((connector) => connector.name),
+    speed_tier: params.speedTier?.map((speedTier) => speedTier.id),
     bbox: params.bbox,
     limit: params.limit,
     offset: params.offset
@@ -95,9 +95,9 @@ export async function fetchNearbyStations(params: NearbyStationListParams, fetch
   const query = toQueryString({
     lat: params.lat,
     lon: params.lon,
-    radius: params.radius,
-    connector_type: params.connectorType,
-    speed_tier: params.speedTier,
+    radius_km: params.radius,
+    connector_type: params.connectorType?.map((connector) => connector.name),
+    speed_tier: params.speedTier?.map((speedTier) => speedTier.id),
     limit: params.limit
   });
 
