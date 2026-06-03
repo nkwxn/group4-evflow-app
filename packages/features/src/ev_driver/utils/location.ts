@@ -1,20 +1,39 @@
 import * as Location from 'expo-location';
 
-export async function getUserLocation(): Promise<{ latitude: number; longitude: number } | null> {
+export type LocationPermissionStatus = 'granted' | 'denied' | 'undetermined' | 'unavailable';
+
+export type UserLocationResult = {
+  coordinates: { latitude: number; longitude: number } | null;
+  status: LocationPermissionStatus;
+};
+
+export async function getUserLocation(options: { requestPermission?: boolean } = {}): Promise<UserLocationResult> {
   try {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
+    const permission = options.requestPermission
+      ? await Location.requestForegroundPermissionsAsync()
+      : await Location.getForegroundPermissionsAsync();
+
+    if (permission.status !== Location.PermissionStatus.GRANTED) {
       console.log('Permission to access location was denied');
-      return null;
+      return {
+        coordinates: null,
+        status: permission.status === Location.PermissionStatus.DENIED ? 'denied' : 'undetermined'
+      };
     }
 
     const location = await Location.getCurrentPositionAsync({});
     return {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude
+      coordinates: {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      },
+      status: 'granted'
     };
   } catch (error) {
     console.error('Error getting location:', error);
-    return null;
+    return {
+      coordinates: null,
+      status: 'unavailable'
+    };
   }
 }

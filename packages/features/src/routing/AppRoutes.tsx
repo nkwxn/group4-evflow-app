@@ -4,6 +4,7 @@ import { EVDriverContainer } from '../ev_driver/EVDriverContainer';
 import { LoginScreen } from '../login/LoginScreen';
 import { ProfileSelectionScreen } from '../profile_selection/ProfileSelectionScreen';
 import { RegistrationScreen } from '../registration/RegistrationScreen';
+import { ScanSpkluScreen, InitializeChargingScreen, TransactionSuccessScreen, ChargingStatusScreen, ChargingSuccessfulScreen } from '../charging_flow';
 import type { UserRole } from '../profile_selection/types';
 
 export function AppRoutes() {
@@ -19,6 +20,11 @@ export function AppRoutes() {
       <Route path="/register" element={<RegistrationRoute />} />
       <Route path="/ev-driver" element={<Navigate replace to="/ev-driver/map" />} />
       <Route path="/ev-driver/:tab" element={<EVDriverContainer />} />
+      <Route path="/charging-flow/scan" element={<ScanSpkluScreen />} />
+      <Route path="/charging-flow/initialize" element={<InitializeChargingScreen />} />
+      <Route path="/charging-flow/success" element={<TransactionSuccessScreen />} />
+      <Route path="/charging-flow/status" element={<ChargingStatusScreen />} />
+      <Route path="/charging-flow/successful" element={<ChargingSuccessfulScreen />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   );

@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, UIManager, View, useWindowDimensions, type ViewStyle } from 'react-native';
-import Slider from '@react-native-community/slider';
 import { colors, driverMapStyles as styles, LeafletMap } from '@evflow/ui';
 import { fetchConnectorTypes, fetchNearbyStations, fetchSpeedTiers, fetchStations, type ConnectorTypeApiItem, type SpeedTierApiItem, type StationApiItem } from '@evflow/shared';
-import { getUserLocation } from './utils/location';
+import { getUserLocation, type LocationPermissionStatus } from './utils/location';
 import { FilterCategory, type FilterOption } from './components/FilterCategory';
 import { locationPinSvg } from './components/locationPinSvg';
 import { PlatformSlider } from '../shared/PlatformSlider';
-import searchIcon from '../assets/images/search-icon.svg?raw';
-import lightningIcon from '../assets/images/lightning-icon.svg?raw';
-import filterSettingIcon from '../assets/images/filter-setting.svg?raw';
-import closeButtonIcon from '../assets/images/close-button-icon.svg?raw';
 import { SvgAssetIcon } from '../shared/SvgAssetIcon';
+import { closeButtonIcon, filterSettingIcon, lightningIcon, searchIcon } from './components/driverMapIcons';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -77,10 +73,13 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
   const [stationsError, setStationsError] = useState<string | null>(null);
   const [stationsLoading, setStationsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [locationPermissionStatus, setLocationPermissionStatus] = useState<LocationPermissionStatus>('undetermined');
+  const [locationPermissionLoading, setLocationPermissionLoading] = useState(false);
   const [locationResolved, setLocationResolved] = useState(false);
   const [mapView, setMapView] = useState<MapViewState>(defaultMapView);
   const previousMapViewRef = useRef<MapViewState>(defaultMapView);
   const previousResultsExpandedRef = useRef(false);
+  const requestedLocationPermissionRef = useRef(false);
   const selectedStationRef = useRef<Station | null>(selectedStation);
   const expandedRef = useRef(expanded);
   useEffect(() => {
@@ -124,24 +123,64 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   };
 
+  const resolveUserLocation = async (requestPermission = false) => {
+    if (requestPermission) {
+      requestedLocationPermissionRef.current = true;
+    }
+
+    setLocationPermissionLoading(true);
+
+    const locationResult = await getUserLocation({ requestPermission });
+
+    setLocationPermissionStatus(locationResult.status);
+    setUserLocation(locationResult.coordinates);
+
+    if (locationResult.coordinates && !selectedStationRef.current) {
+      const userMapView = {
+        center: locationResult.coordinates,
+        zoom: 14
+      };
+      setMapView(userMapView);
+      previousMapViewRef.current = userMapView;
+      setAppliedDistanceKm(distanceKm);
+    }
+
+    setLocationResolved(true);
+    setLocationPermissionLoading(false);
+  };
+
   useEffect(() => {
     let mounted = true;
 
     (async () => {
-      const coords = await getUserLocation();
+      const locationResult = await getUserLocation();
+
       if (!mounted) {
         return;
       }
 
-      setUserLocation(coords);
-      if (coords && !selectedStationRef.current) {
+      setLocationPermissionStatus(locationResult.status);
+      setUserLocation(locationResult.coordinates);
+
+      if (locationResult.coordinates && !selectedStationRef.current) {
         const userMapView = {
-          center: coords,
+          center: locationResult.coordinates,
           zoom: 14
         };
         setMapView(userMapView);
         previousMapViewRef.current = userMapView;
       }
+
+      if (
+        Platform.OS !== 'web' &&
+        !locationResult.coordinates &&
+        locationResult.status === 'undetermined' &&
+        !requestedLocationPermissionRef.current
+      ) {
+        await resolveUserLocation(true);
+        return;
+      }
+
       setLocationResolved(true);
     })();
 
@@ -290,7 +329,7 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
 
           openStationDetail(station);
         }}
-        showCurrentLocationPinpoint
+        showCurrentLocationPinpoint={Boolean(userLocation)}
         zoom={mapView.zoom}
       />
 
@@ -314,7 +353,7 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           }}
           style={styles.filterIcon}
         >
-          <SvgAssetIcon color="#005F64" height={18} svg={filterSettingIcon} width={18} />
+          <SvgAssetIcon color="#005F64" height={18} name="filter" svg={filterSettingIcon} width={18} />
         </Pressable>
       </View>
 
@@ -385,6 +424,10 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
               onScroll={handleScroll}
               stations={stations}
               stationsError={stationsError}
+              locationPermissionStatus={locationPermissionStatus}
+              locationPermissionLoading={locationPermissionLoading}
+              hasUserLocation={Boolean(userLocation)}
+              onRequestLocation={() => resolveUserLocation(true)}
             />
           ) : null}
 
@@ -437,7 +480,7 @@ function FilterDrawer({
       <View style={styles.sheetHeader}>
         <Text style={styles.sheetTitle}>Filter</Text>
         <Pressable accessibilityLabel="Close filter" accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <SvgAssetIcon color="#191C1D" height={14} svg={closeButtonIcon} width={14} />
+          <SvgAssetIcon color="#191C1D" height={14} name="close" svg={closeButtonIcon} width={14} />
         </Pressable>
       </View>
 
@@ -503,27 +546,68 @@ function FilterDrawer({
 }
 
 type ResultsDrawerProps = {
+  hasUserLocation: boolean;
   expanded: boolean;
+  locationPermissionLoading: boolean;
+  locationPermissionStatus: LocationPermissionStatus;
   loading: boolean;
   onFilter: () => void;
+  onRequestLocation: () => void;
   onSelectStation: (station: Station) => void;
   onScroll?: (e: any) => void;
   stations: Station[];
   stationsError: string | null;
 };
 
-function ResultsDrawer({ expanded, loading, onFilter, onSelectStation, onScroll, stations, stationsError }: ResultsDrawerProps) {
+function ResultsDrawer({
+  expanded,
+  hasUserLocation,
+  loading,
+  locationPermissionLoading,
+  locationPermissionStatus,
+  onFilter,
+  onRequestLocation,
+  onSelectStation,
+  onScroll,
+  stations,
+  stationsError
+}: ResultsDrawerProps) {
+  const shouldShowLocationPrompt = !hasUserLocation;
+
   return (
     <View style={styles.drawerBody}>
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsTitle}>Nearby SPKLU Stations</Text>
         <Pressable accessibilityRole="button" onPress={onFilter} style={styles.filterButton}>
-          <SvgAssetIcon color="#4c5960" height={14} svg={filterSettingIcon} width={14} />
+          <SvgAssetIcon color="#4c5960" height={14} name="filter" svg={filterSettingIcon} width={14} />
           <Text style={styles.filterButtonText}>Filter</Text>
         </Pressable>
       </View>
 
       <View style={[styles.expandedContent, getExpandedContentStateStyle(expanded)]}>
+        {shouldShowLocationPrompt ? (
+          <View style={styles.locationPermissionCard}>
+            <View style={styles.locationPermissionTextWrap}>
+              <Text style={styles.locationPermissionTitle}>Use your current location</Text>
+              <Text style={styles.locationPermissionBody}>{getLocationPermissionMessage(locationPermissionStatus)}</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              disabled={locationPermissionLoading || locationPermissionStatus === 'denied' || locationPermissionStatus === 'unavailable'}
+              onPress={onRequestLocation}
+              style={[
+                styles.locationPermissionButton,
+                (locationPermissionLoading || locationPermissionStatus === 'denied' || locationPermissionStatus === 'unavailable') &&
+                  styles.locationPermissionButtonDisabled
+              ]}
+            >
+              <Text style={styles.locationPermissionButtonText}>
+                {locationPermissionLoading ? 'Checking...' : getLocationPermissionButtonLabel(locationPermissionStatus)}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <ScrollView
           contentContainerStyle={styles.stationList}
           showsVerticalScrollIndicator={false}
@@ -542,6 +626,30 @@ function ResultsDrawer({ expanded, loading, onFilter, onSelectStation, onScroll,
   );
 }
 
+function getLocationPermissionMessage(status: LocationPermissionStatus) {
+  if (status === 'denied') {
+    return 'Location permission is blocked. Enable location access in your browser settings, then reload this page.';
+  }
+
+  if (status === 'unavailable') {
+    return 'Location permission requires HTTPS or localhost and a browser with geolocation support.';
+  }
+
+  return 'Allow location access to reload nearby stations around your current position.';
+}
+
+function getLocationPermissionButtonLabel(status: LocationPermissionStatus) {
+  if (status === 'denied') {
+    return 'Location Blocked';
+  }
+
+  if (status === 'unavailable') {
+    return 'Location Unavailable';
+  }
+
+  return 'Use Current Location';
+}
+
 type StationDetailDrawerProps = {
   expanded: boolean;
   station: Station;
@@ -557,7 +665,7 @@ function StationDetailDrawer({ expanded, station, onClose, onScroll }: StationDe
           {station.name.replace(' Hub', '')}
         </Text>
         <Pressable accessibilityLabel="Close station detail" accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <SvgAssetIcon color="#191C1D" height={14} svg={closeButtonIcon} width={14} />
+          <SvgAssetIcon color="#191C1D" height={14} name="close" svg={closeButtonIcon} width={14} />
         </Pressable>
       </View>
 

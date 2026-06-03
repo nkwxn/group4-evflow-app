@@ -1,9 +1,9 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { colors, profileSelectionStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
-import rightArrowIcon from '../assets/images/right-arrow-pointed.svg?raw';
 import { SvgAssetIcon } from '../shared/SvgAssetIcon';
 import { RoleAssetIcon } from './components/RoleAssetIcon';
+import { rightArrowIcon } from './components/profileSelectionIcons';
 import type { UserRole } from './types';
 
 type ProfileSelectionScreenProps = {
@@ -52,7 +52,7 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
         <View style={[styles.footer, { paddingBottom: 20 + insets.bottom }]}>
           <Pressable accessibilityRole="button" onPress={onContinue} style={styles.continueButton}>
             <Text style={styles.continueText}>Continue to register</Text>
-            <SvgAssetIcon height={16} svg={rightArrowIcon} width={16} />
+            <SvgAssetIcon height={16} name="rightArrow" svg={rightArrowIcon} width={16} />
           </Pressable>
         </View>
       </View>

@@ -3,12 +3,12 @@ import { createElement, useMemo } from 'react';
 type SvgAssetIconProps = {
   color?: string;
   height: number;
-  name?: 'lightning' | 'search' | 'tick';
-  svg: string;
+  name?: 'close' | 'filter' | 'lightning' | 'rightArrow' | 'search' | 'tick';
+  svg?: string;
   width: number;
 };
 
-export function SvgAssetIcon({ color, height, svg, width }: SvgAssetIconProps) {
+export function SvgAssetIcon({ color, height, svg = '', width }: SvgAssetIconProps) {
   const html = useMemo(() => {
     const sizedSvg = svg
       .replace(/width="[^"]*"/, `width="${width}"`)

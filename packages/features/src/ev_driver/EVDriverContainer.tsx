@@ -27,7 +27,13 @@ export function EVDriverContainer() {
             activeKey={activeTab}
             bottomContent={<Text style={styles.sidebarNote}>EV Driver Mode</Text>}
             items={items}
-            onItemPress={(key) => navigate(getDriverTabPath(key as DriverTabKey))}
+            onItemPress={(key) => {
+              if (key === 'scan') {
+                navigate('/charging-flow/scan');
+              } else {
+                navigate(getDriverTabPath(key as DriverTabKey));
+              }
+            }}
             subtitle="Driver"
             title="EV-FLOW"
           />
@@ -43,7 +49,17 @@ export function EVDriverContainer() {
 
         {!desktop ? (
           <View style={[styles.bottomNavWrap, { paddingBottom: insets.bottom }]}>
-            <BottomNavigation activeKey={activeTab} items={items} onItemPress={(key) => navigate(getDriverTabPath(key as DriverTabKey))} />
+            <BottomNavigation
+              activeKey={activeTab}
+              items={items}
+              onItemPress={(key) => {
+                if (key === 'scan') {
+                  navigate('/charging-flow/scan');
+                } else {
+                  navigate(getDriverTabPath(key as DriverTabKey));
+                }
+              }}
+            />
           </View>
         ) : null}
       </View>

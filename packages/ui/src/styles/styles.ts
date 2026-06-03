@@ -657,13 +657,19 @@ export const registrationScreenStyles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: 16
   },
+  selectToggle: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    minHeight: 48
+  },
   selectText: {
     color: '#1f2529',
     flex: 1,
     fontSize: fontSizes.bodyLarge
   },
   placeholderText: {
-    color: '#1f2529'
+    color: '#9aa4a9'
   },
   chevron: {
     color: '#4b555a',
@@ -685,6 +691,26 @@ export const registrationScreenStyles = StyleSheet.create({
   },
   selectedSelectOption: {
     backgroundColor: '#e9fbfc'
+  },
+  selectBackdrop: {
+    backgroundColor: 'rgba(15, 36, 45, 0.32)',
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 20
+  },
+  selectModal: {
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    maxHeight: '70%',
+    overflow: 'hidden',
+    paddingVertical: 8
+  },
+  selectModalTitle: {
+    color: colors.text,
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '900',
+    paddingHorizontal: 16,
+    paddingVertical: 12
   },
   selectOptionText: {
     color: '#1f2529',
@@ -1246,6 +1272,45 @@ export const driverMapStyles = StyleSheet.create({
     color: '#2b3337',
     fontSize: fontSizes.label,
     fontWeight: '700'
+  },
+  locationPermissionCard: {
+    backgroundColor: '#eefafb',
+    borderColor: '#bce9ed',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 14
+  },
+  locationPermissionTextWrap: {
+    gap: 4
+  },
+  locationPermissionTitle: {
+    color: colors.text,
+    fontSize: fontSizes.control,
+    fontWeight: '900',
+    lineHeight: 18
+  },
+  locationPermissionBody: {
+    color: '#4e5d63',
+    fontSize: fontSizes.caption,
+    lineHeight: 18
+  },
+  locationPermissionButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: colors.text,
+    borderRadius: 8,
+    justifyContent: 'center',
+    minHeight: 40,
+    paddingHorizontal: 14
+  },
+  locationPermissionButtonDisabled: {
+    backgroundColor: '#7b8b90'
+  },
+  locationPermissionButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.label,
+    fontWeight: '800'
   },
   stationList: {
     gap: 12,
