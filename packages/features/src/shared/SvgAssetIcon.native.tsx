@@ -3,12 +3,44 @@ import Svg, { Path } from 'react-native-svg';
 type SvgAssetIconProps = {
   color?: string;
   height: number;
-  name?: 'close' | 'filter' | 'lightning' | 'rightArrow' | 'search' | 'tick';
+  name?: 'bankTopup' | 'chargingFailure' | 'chargingHistory' | 'close' | 'filter' | 'leftChevron' | 'lightning' | 'rightArrow' | 'search' | 'sort' | 'tick';
   svg?: string;
   width: number;
 };
 
 export function SvgAssetIcon({ color = '#005F64', height, name, width }: SvgAssetIconProps) {
+  if (name === 'bankTopup') {
+    return (
+      <Svg width={width} height={height} viewBox="0 0 20 20" fill="none">
+        <Path d="M3 16V9H5V16H3ZM9 16V9H11V16H9ZM0 20V18H20V20H0ZM15 16V9H17V16H15ZM0 7V5L10 0L20 5V7H0ZM4.45 5H10H15.55H4.45ZM4.45 5H15.55L10 2.25L4.45 5Z" fill={color} />
+      </Svg>
+    );
+  }
+
+  if (name === 'chargingFailure') {
+    return (
+      <Svg width={width} height={height} viewBox="0 0 22 19" fill="none">
+        <Path d="M0 19L11 0L22 19H0ZM3.45 17H18.55L11 4L3.45 17ZM11 16C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14C10.7167 14 10.4792 14.0958 10.2875 14.2875C10.0958 14.4792 10 14.7167 10 15C10 15.2833 10.0958 15.5208 10.2875 15.7125C10.4792 15.9042 10.7167 16 11 16ZM10 13H12V8H10V13Z" fill={color} />
+      </Svg>
+    );
+  }
+
+  if (name === 'chargingHistory') {
+    return (
+      <Svg width={width} height={height} viewBox="0 0 18 18" fill="none">
+        <Path d="M4.5 16L7 12H5.5V9L3 13H4.5V16ZM2 7H8V2H2V7ZM2 16H8V9H2V16ZM0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H8C8.55 0 9.02083 0.195833 9.4125 0.5875C9.80417 0.979167 10 1.45 10 2V9H11.25C11.7333 9 12.1458 9.17083 12.4875 9.5125C12.8292 9.85417 13 10.2667 13 10.75V15.375C13 15.6583 13.1167 15.9167 13.35 16.15C13.5833 16.3833 13.8417 16.5 14.125 16.5C14.425 16.5 14.6875 16.3833 14.9125 16.15C15.1375 15.9167 15.25 15.6583 15.25 15.375V6H15C14.7167 6 14.4792 5.90417 14.2875 5.7125C14.0958 5.52083 14 5.28333 14 5V3H14.5V1.5H15.5V3H16.5V1.5H17.5V3H18V5C18 5.28333 17.9042 5.52083 17.7125 5.7125C17.5208 5.90417 17.2833 6 17 6H16.75V15.375C16.75 16.075 16.4958 16.6875 15.9875 17.2125C15.4792 17.7375 14.8583 18 14.125 18C13.4083 18 12.7917 17.7375 12.275 17.2125C11.7583 16.6875 11.5 16.075 11.5 15.375V10.75C11.5 10.6667 11.4792 10.6042 11.4375 10.5625C11.3958 10.5208 11.3333 10.5 11.25 10.5H10V18H0ZM8 16H2H8Z" fill={color} />
+      </Svg>
+    );
+  }
+
+  if (name === 'sort') {
+    return (
+      <Svg width={width} height={height} viewBox="0 0 18 12" fill="none">
+        <Path d="M7 12V10H11V12H7ZM3 7V5H15V7H3ZM0 2V0H18V2H0Z" fill={color} />
+      </Svg>
+    );
+  }
+
   if (name === 'search') {
     return (
       <Svg width={width} height={height} viewBox="0 0 18 18" fill="none">
@@ -60,6 +92,14 @@ export function SvgAssetIcon({ color = '#005F64', height, name, width }: SvgAsse
           d="M8 16L6.575 14.6L12.175 9H0V7H12.175L6.575 1.4L8 0L16 8L8 16Z"
           fill={color}
         />
+      </Svg>
+    );
+  }
+
+  if (name === 'leftChevron') {
+    return (
+      <Svg width={width} height={height} viewBox="0 0 8 12" fill="none">
+        <Path d="M6 12L0 6L6 0L7.4 1.4L2.8 6L7.4 10.6L6 12Z" fill={color} />
       </Svg>
     );
   }

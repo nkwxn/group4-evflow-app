@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Image, type ImageSourcePropType } from 'react-native';
 import { useNavigate } from 'react-router';
 import { chargingFlowStyles as styles } from '@evflow/ui';
@@ -9,6 +10,17 @@ import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 export function TransactionSuccessScreen() {
   const navigate = useNavigate();
   const insets = useAppSafeAreaInsets();
+  const [isPluggedIn, setIsPluggedIn] = useState(false);
+
+  useEffect(() => {
+    const pluggedInTimer = setTimeout(() => {
+      setIsPluggedIn(true);
+    }, 5000);
+
+    return () => {
+      clearTimeout(pluggedInTimer);
+    };
+  }, []);
 
   return (
     <View style={styles.page}>
@@ -62,13 +74,20 @@ export function TransactionSuccessScreen() {
 
         <View style={styles.statusPill}>
           <View style={styles.statusIndicator} />
-          <Text style={styles.statusPillText}>Status: Awaiting Physical Connection...</Text>
+          <Text style={styles.statusPillText}>
+            {isPluggedIn ? 'Status: Plugged In' : 'Status: Awaiting Physical Connection...'}
+          </Text>
         </View>
 
         <View style={styles.footerSpacer} />
         
         <View style={styles.footerAction}>
-          <Pressable style={styles.primaryButton} onPress={() => navigate('/charging-flow/status')}>
+          <Pressable
+            accessibilityState={{ disabled: !isPluggedIn }}
+            disabled={!isPluggedIn}
+            style={[styles.primaryButton, !isPluggedIn && styles.disabledPrimaryButton]}
+            onPress={() => navigate('/charging-flow/status')}
+          >
             <View style={styles.buttonIconRow}>
               <ChargingFlowIcon name="connector" size={20} color="#004a4f" />
               <Text style={styles.primaryButtonText}>Start Charging Session</Text>

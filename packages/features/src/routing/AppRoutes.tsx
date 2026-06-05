@@ -33,7 +33,11 @@ export function AppRoutes() {
 function LoginRoute() {
   const navigate = useNavigate();
 
-  return <LoginScreen onLogin={() => navigate('/ev-driver')} onRegister={() => navigate('/profile-selection')} />;
+  return <LoginScreen 
+    onLogin={() => navigate('/ev-driver')} 
+    onRegister={() => navigate('/register')} 
+    // onRegister={() => navigate('/profile-selection')} 
+  />;
 }
 
 type ProfileSelectionRouteProps = {
@@ -59,8 +63,9 @@ function RegistrationRoute() {
 
   return (
     <RegistrationScreen
-      onBack={() => navigate('/profile-selection')}
-      onLogin={() => navigate('/ev-driver')}
+      onBack={() => navigate('/')}
+      // onBack={() => navigate('/profile-selection')}
+      onLogin={() => navigate('/')}
       onRegister={() => navigate('/ev-driver')}
     />
   );

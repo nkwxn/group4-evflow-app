@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { fetchEvModels, type EVModelApiItem } from '@evflow/shared';
 import { registrationScreenStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import { SvgAssetIcon } from '../shared/SvgAssetIcon';
 import { PlatformSlider } from '../shared/PlatformSlider';
 import { ModelPicker } from './components/ModelPicker';
 
@@ -17,7 +18,8 @@ const batteryThresholds = [10, 15, 20, 25, 30, 35, 40] as const;
 
 export function RegistrationScreen({ onBack, onLogin, onRegister }: RegistrationScreenProps) {
   const insets = useAppSafeAreaInsets();
-  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedCarId, setSelectedCarId] = useState('');
   const [selectedConnectorType, setSelectedConnectorType] = useState(connectorTypes[0]);
   const [batteryThreshold, setBatteryThreshold] = useState(20);
@@ -68,7 +70,8 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
     <View style={styles.page}>
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>{'<'} Back</Text>
+          <SvgAssetIcon color="#191C1D" height={12} name="leftChevron" width={8} />
+          <Text style={styles.backText}>Back</Text>
         </Pressable>
       </View>
 
@@ -81,15 +84,28 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
         <Text style={styles.subtitle}>Join for access to EV-FLOW smart routing.</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Full Name</Text>
+          <Text style={styles.label}>Username</Text>
           <TextInput
-            accessibilityLabel="Full Name"
-            autoCapitalize="words"
-            onChangeText={setFullName}
-            placeholder="Enter your full name"
+            accessibilityLabel="Username"
+            autoCapitalize="none"
+            onChangeText={setUsername}
+            placeholder="Enter your username"
             placeholderTextColor="#9aa4a9"
             style={styles.input}
-            value={fullName}
+            value={username}
+          />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            accessibilityLabel="Password"
+            autoCapitalize="none"
+            onChangeText={setPassword}
+            placeholder="Enter your password"
+            placeholderTextColor="#9aa4a9"
+            style={styles.input}
+            value={password}
           />
         </View>
 

@@ -3,12 +3,11 @@ import { mockDriverScreenStyles as styles } from '@evflow/ui';
 import type { DriverTabKey } from './types';
 
 type MockDriverScreenProps = {
-  tabKey: Exclude<DriverTabKey, 'map'>;
+  tabKey: Exclude<DriverTabKey, 'map' | 'wallet'>;
   topInset?: number;
 };
 
-const labels: Record<Exclude<DriverTabKey, 'map'>, string> = {
-  wallet: 'Wallet',
+const labels: Record<Exclude<DriverTabKey, 'map' | 'wallet'>, string> = {
   scan: 'Scan',
   plan_route: 'Plan Route',
   profile: 'Profile'

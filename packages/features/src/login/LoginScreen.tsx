@@ -24,14 +24,6 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
       ]}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.top}>
-        <Text style={styles.signupText}>
-          Don't have an account?{' '}
-          <Text onPress={onRegister} style={styles.signupLink}>
-            Register Now
-          </Text>
-        </Text>
-      </View>
 
       <View style={styles.content}>
         <View style={styles.logoWrap}>
@@ -42,12 +34,12 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
         <Text style={styles.appSubtitle}>Electric Vehicle Forecasting & Location Optimization Wayfinder</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.inputLabel}>Email</Text>
+          <Text style={styles.inputLabel}>Username</Text>
           <TextInput
-            accessibilityLabel="Email"
+            accessibilityLabel="Username"
             autoCapitalize="none"
-            keyboardType="email-address"
-            placeholder="Enter your email"
+            keyboardType="default"
+            placeholder="Enter your username"
             placeholderTextColor="#7c858b"
             style={styles.input}
           />
@@ -71,16 +63,14 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
           <Text style={styles.loginButtonText}>Log In</Text>
         </Pressable>
 
-        <View style={styles.dividerRow}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>- Login With -</Text>
-          <View style={styles.divider} />
-        </View>
+        <View style={styles.signupSeparator} />
 
-        <Pressable accessibilityRole="button" style={styles.googleButton}>
-          <Text style={styles.googleLogo}>G</Text>
-          <Text style={styles.googleText}>Google</Text>
-        </Pressable>
+        <Text style={styles.signupText}>
+          Don't have an account?{' '}
+          <Text onPress={onRegister} style={styles.signupLink}>
+            Register Now
+          </Text>
+        </Text>
       </View>
     </ScrollView>
   );

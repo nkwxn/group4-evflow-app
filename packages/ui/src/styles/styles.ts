@@ -286,7 +286,9 @@ export const loginScreenStyles = StyleSheet.create({
   signupText: {
     color: '#1f2529',
     fontSize: fontSizes.control,
-    lineHeight: 20
+    lineHeight: 20,
+    marginTop: 24,
+    textAlign: 'center'
   },
   signupLink: {
     color: colors.text,
@@ -381,6 +383,12 @@ export const loginScreenStyles = StyleSheet.create({
     color: colors.white,
     fontSize: fontSizes.bodyLarge,
     fontWeight: '500'
+  },
+  signupSeparator: {
+    backgroundColor: '#cfd8de',
+    height: 1,
+    marginTop: 32,
+    width: '100%'
   },
   dividerRow: {
     alignItems: 'center',
@@ -598,7 +606,10 @@ export const registrationScreenStyles = StyleSheet.create({
     paddingHorizontal: 20
   },
   backButton: {
+    alignItems: 'center',
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'center',
     minHeight: 42
   },
@@ -1030,6 +1041,417 @@ export const filterCategoryStyles = StyleSheet.create({
   },
   selectedDescription: {
     color: colors.text
+  }
+});
+
+export const walletScreenStyles = StyleSheet.create({
+  page: {
+    backgroundColor: '#f7f8fd',
+    flex: 1
+  },
+  content: {
+    gap: 16,
+    marginHorizontal: 'auto',
+    maxWidth: 520,
+    paddingHorizontal: 24,
+    width: '100%'
+  },
+  balanceCard: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: '#eef1f5',
+    borderRadius: 10,
+    borderWidth: 1,
+    boxShadow: '0 6px 20px rgba(15, 36, 45, 0.05)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 94,
+    paddingHorizontal: 20
+  },
+  balanceLabel: {
+    color: '#4d5961',
+    fontSize: fontSizes.caption,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    lineHeight: 16
+  },
+  balanceValue: {
+    color: '#151c2a',
+    fontSize: fontSizes.titleSmall,
+    fontWeight: '900',
+    lineHeight: 30,
+    marginTop: 8
+  },
+  topUpButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 18
+  },
+  topUpButtonText: {
+    color: colors.text,
+    fontSize: fontSizes.caption,
+    fontWeight: '800'
+  },
+  historyHeader: {
+    alignItems: 'center',
+    backgroundColor: '#f7f8fd',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: -2,
+    paddingBottom: 4,
+    paddingTop: 12,
+    zIndex: 2
+  },
+  pinnedHistoryShell: {
+    alignItems: 'center',
+    backgroundColor: '#f7f8fd',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 20
+  },
+  pinnedHistoryInner: {
+    backgroundColor: '#f7f8fd',
+    maxWidth: 520,
+    paddingHorizontal: 24,
+    width: '100%'
+  },
+  historyTitle: {
+    color: '#151c2a',
+    fontSize: fontSizes.titleMedium,
+    fontWeight: '900',
+    lineHeight: 28
+  },
+  filterButton: {
+    alignItems: 'center',
+    height: 34,
+    justifyContent: 'center',
+    width: 34
+  },
+  transactionList: {
+    gap: 14
+  },
+  transactionCard: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 14,
+    minHeight: 102,
+    paddingHorizontal: 12,
+    paddingVertical: 14
+  },
+  transactionIcon: {
+    alignItems: 'center',
+    backgroundColor: '#d4edf0',
+    borderRadius: 24,
+    height: 48,
+    justifyContent: 'center',
+    width: 48
+  },
+  failedTransactionIcon: {
+    backgroundColor: '#ffd9d6'
+  },
+  transactionIconText: {
+    color: '#5f7075',
+    fontSize: fontSizes.titleMedium,
+    fontWeight: '900'
+  },
+  failedTransactionIconText: {
+    color: '#b32126'
+  },
+  transactionBody: {
+    flex: 1,
+    gap: 5
+  },
+  transactionTitle: {
+    color: '#151c2a',
+    fontSize: fontSizes.control,
+    fontWeight: '900',
+    lineHeight: 20
+  },
+  transactionMeta: {
+    color: '#4f5b64',
+    fontSize: fontSizes.tiny,
+    lineHeight: 16
+  },
+  transactionAmountWrap: {
+    alignItems: 'flex-end',
+    gap: 8,
+    minWidth: 84
+  },
+  transactionAmount: {
+    color: '#151c2a',
+    fontSize: fontSizes.control,
+    fontWeight: '900'
+  },
+  positiveAmount: {
+    color: '#00696f'
+  },
+  statusBadge: {
+    backgroundColor: '#cfe9ec',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4
+  },
+  failedStatusBadge: {
+    backgroundColor: '#ffd9d6'
+  },
+  statusBadgeText: {
+    color: '#4f696d',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.7
+  },
+  failedStatusBadgeText: {
+    color: '#b32126'
+  },
+  cashbackBanner: {
+    backgroundColor: colors.text,
+    borderRadius: 14,
+    marginTop: 16,
+    minHeight: 128,
+    overflow: 'hidden',
+    paddingHorizontal: 24,
+    paddingVertical: 24
+  },
+  cashbackTitle: {
+    color: colors.white,
+    fontSize: fontSizes.titleMedium,
+    fontWeight: '900',
+    lineHeight: 28
+  },
+  cashbackText: {
+    color: '#b7eef1',
+    fontSize: fontSizes.caption,
+    lineHeight: 18,
+    marginTop: 6
+  },
+  cashbackCta: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 999,
+    justifyContent: 'center',
+    marginTop: 12,
+    minHeight: 24,
+    width: 88
+  },
+  cashbackCtaText: {
+    color: colors.text,
+    fontSize: fontSizes.tiny,
+    fontWeight: '800'
+  },
+  modalOverlay: {
+    flex: 1
+  },
+  centeredModalOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 32, 0.36)',
+    justifyContent: 'center',
+    padding: 24
+  },
+  bottomModalOverlay: {
+    backgroundColor: 'rgba(15, 23, 32, 0.24)',
+    justifyContent: 'flex-end'
+  },
+  detailSheet: {
+    backgroundColor: colors.white,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
+  },
+  desktopDetailSheet: {
+    borderRadius: 14,
+    maxWidth: 430,
+    width: '100%'
+  },
+  mobileDetailSheet: {
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    height: '100%',
+    width: '100%'
+  },
+  detailHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#eef1f4',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 64,
+    paddingHorizontal: 18
+  },
+  closeButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    width: 40
+  },
+  detailHeaderTitle: {
+    color: colors.text,
+    fontSize: fontSizes.titleMedium,
+    fontWeight: '900'
+  },
+  detailContent: {
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 32
+  },
+  detailResultIcon: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#c9f7fb',
+    borderRadius: 32,
+    height: 64,
+    justifyContent: 'center',
+    width: 64
+  },
+  failedDetailResultIcon: {
+    backgroundColor: '#ffd9d6'
+  },
+  detailResultIconText: {
+    color: colors.primary,
+    fontSize: fontSizes.titleMedium,
+    fontWeight: '900'
+  },
+  failedDetailResultIconText: {
+    color: '#b32126'
+  },
+  detailAmount: {
+    color: '#151c2a',
+    fontSize: 30,
+    fontWeight: '900',
+    lineHeight: 38,
+    marginTop: 18,
+    textAlign: 'center'
+  },
+  detailType: {
+    color: '#6b7280',
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center'
+  },
+  detailSummaryCard: {
+    alignItems: 'center',
+    borderColor: '#edf1f4',
+    borderRadius: 10,
+    borderWidth: 1,
+    boxShadow: '0 2px 6px rgba(15, 36, 45, 0.04)',
+    flexDirection: 'row',
+    gap: 14,
+    marginTop: 40,
+    minHeight: 74,
+    paddingHorizontal: 16
+  },
+  detailSummaryIcon: {
+    alignItems: 'center',
+    backgroundColor: '#f0f2f5',
+    borderRadius: 7,
+    height: 40,
+    justifyContent: 'center',
+    width: 40
+  },
+  detailSummaryIconText: {
+    color: '#4b5563',
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '900'
+  },
+  detailSummaryTitle: {
+    color: '#151c2a',
+    fontSize: fontSizes.control,
+    fontWeight: '900'
+  },
+  detailSummaryMeta: {
+    color: '#6b7280',
+    fontSize: fontSizes.caption,
+    marginTop: 3
+  },
+  detailSectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 32,
+    minHeight: 36
+  },
+  detailSectionTitle: {
+    color: '#6b7280',
+    fontSize: fontSizes.caption,
+    fontWeight: '900',
+    letterSpacing: 1
+  },
+  detailChevron: {
+    color: '#9aa4a9',
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '800'
+  },
+  detailRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 36
+  },
+  detailLabel: {
+    color: '#6b7280',
+    flex: 1,
+    fontSize: fontSizes.control
+  },
+  detailValue: {
+    color: '#53606a',
+    flex: 1.25,
+    fontSize: fontSizes.control,
+    fontWeight: '600',
+    textAlign: 'right'
+  },
+  detailStrongValue: {
+    color: '#151c2a',
+    fontWeight: '900'
+  },
+  successText: {
+    color: '#00b875',
+    fontWeight: '900'
+  },
+  failedText: {
+    color: '#b32126',
+    fontWeight: '900'
+  },
+  detailDivider: {
+    backgroundColor: '#e5eaee',
+    height: 1,
+    marginVertical: 8
+  },
+  detailTotalLabel: {
+    color: '#151c2a',
+    fontWeight: '900'
+  },
+  detailTotalValue: {
+    color: '#151c2a',
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '900'
+  },
+  invoiceFooter: {
+    backgroundColor: colors.white,
+    borderTopColor: '#eef1f4',
+    borderTopWidth: 1,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 16
+  },
+  invoiceButton: {
+    alignItems: 'center',
+    borderColor: colors.primary,
+    borderRadius: 999,
+    borderWidth: 2,
+    justifyContent: 'center',
+    minHeight: 56
+  },
+  invoiceButtonText: {
+    color: colors.text,
+    fontSize: fontSizes.control,
+    fontWeight: '900'
   }
 });
 

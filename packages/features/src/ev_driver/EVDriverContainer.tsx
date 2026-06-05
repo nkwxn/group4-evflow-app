@@ -6,6 +6,7 @@ import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { DriverAssetIcon } from './components/DriverAssetIcon';
 import { DriverMapScreen } from './DriverMapScreen';
 import { MockDriverScreen } from './MockDriverScreen';
+import { WalletScreen } from './WalletScreen';
 import type { DriverTabKey } from './types';
 
 export function EVDriverContainer() {
@@ -43,6 +44,8 @@ export function EVDriverContainer() {
       <View style={[styles.content, activeTab === 'map' && Platform.OS === 'web' && { touchAction: 'none' } as any]}>
         {activeTab === 'map' ? (
           <DriverMapScreen bottomOffset={bottomNavOffset} topInset={topInset} />
+        ) : activeTab === 'wallet' ? (
+          <WalletScreen bottomInset={insets.bottom} bottomOffset={bottomNavOffset} topInset={topInset} />
         ) : (
           <MockDriverScreen tabKey={activeTab} topInset={topInset} />
         )}

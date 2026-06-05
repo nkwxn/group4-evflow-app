@@ -313,6 +313,9 @@ export const chargingFlowStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+  disabledPrimaryButton: {
+    opacity: 0.45
+  },
   primaryButtonText: {
     color: '#004a4f',
     fontSize: fontSizes.bodyLarge,

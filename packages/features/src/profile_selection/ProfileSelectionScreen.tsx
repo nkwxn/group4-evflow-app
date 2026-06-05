@@ -21,7 +21,7 @@ export function ProfileSelectionScreen({ selectedRole, onBack, onContinue, onSel
       <View style={styles.contentShell}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backIcon}>‹</Text>
+            <SvgAssetIcon color="#191C1D" height={12} name="leftChevron" width={8} />
           </Pressable>
           <Text style={styles.brand}>EV-FLOW</Text>
           <View style={styles.headerSpacer} />
