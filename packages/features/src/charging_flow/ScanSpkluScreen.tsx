@@ -3,12 +3,10 @@ import { View, Text, Pressable } from 'react-native';
 import { useNavigate } from 'react-router';
 import { Html5Qrcode } from 'html5-qrcode';
 import { chargingFlowStyles as styles } from '@evflow/ui';
-import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
-import { ChargingFlowIcon } from './components/ChargingFlowIcon';
+import { ChargingFlowHeader } from './components/ChargingFlowHeader';
 
 export function ScanSpkluScreen() {
   const navigate = useNavigate();
-  const insets = useAppSafeAreaInsets();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [permissionLoading, setPermissionLoading] = useState(false);
@@ -87,15 +85,13 @@ export function ScanSpkluScreen() {
           height: 100% !important;
         }
       `}</style>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => navigate('/ev-driver/map')} style={styles.backButton}>
-          <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Scan SPKLU QR Code</Text>
-        <View style={styles.headerRight}>
-          <ChargingFlowIcon name="flashlight" size={22} color="#191C1D" />
-        </View>
-      </View>
+      <ChargingFlowHeader
+        title="Scan SPKLU QR Code"
+        onBack={() => navigate('/ev-driver/map')}
+        rightIconName="flashlight"
+        rightIconColor="#191C1D"
+        rightIconSize={22}
+      />
 
       <View style={styles.cameraContainer}>
         {hasPermission !== true ? (

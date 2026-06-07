@@ -18,12 +18,22 @@ export type StationApiItem = {
   charge_type: string | null;
   speed_tier: string | null;
   connectors: number | null;
-  connector_types: string[];
+  connector_types: StationConnectorTypeApiItem[];
   connector_inferred: boolean | null;
   status: string | null;
   date_verified: string | null;
   distance_km: number | null;
 };
+
+export type StationConnectorTypeApiItem =
+  | string
+  | {
+      type?: string | null;
+      count?: number | null;
+      speed_tier?: string | null;
+      power_kw?: number | null;
+      type_inferred?: boolean | null;
+    };
 
 export type StationListApiResponse = {
   total: number;

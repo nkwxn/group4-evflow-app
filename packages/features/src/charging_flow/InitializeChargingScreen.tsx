@@ -4,6 +4,7 @@ import { chargingFlowStyles as styles } from '@evflow/ui';
 import { useState } from 'react';
 import { ChargingFlowIcon } from './components/ChargingFlowIcon';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import { ChargingFlowHeader } from './components/ChargingFlowHeader';
 
 export function InitializeChargingScreen() {
   const navigate = useNavigate();
@@ -12,15 +13,13 @@ export function InitializeChargingScreen() {
 
   return (
     <View style={styles.page}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => navigate(-1)} style={styles.backButton}>
-          <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Initialize Charging</Text>
-        <View style={styles.headerRight}>
-          <ChargingFlowIcon name="close" size={18} color="#191C1D" />
-        </View>
-      </View>
+      <ChargingFlowHeader
+        title="Initialize Charging"
+        onBack={() => navigate(-1)}
+        rightIconName="close"
+        rightIconColor="#191C1D"
+        rightIconSize={18}
+      />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}>
         <View style={styles.stationInfoCard}>

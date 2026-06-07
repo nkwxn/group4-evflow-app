@@ -6,6 +6,7 @@ import { ChargingFlowIcon } from './components/ChargingFlowIcon';
 import paymentCompletePng from '../assets/images/payment-complete.png';
 import carPlugInPng from '../assets/images/car-plug-in.png';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import { ChargingFlowHeader } from './components/ChargingFlowHeader';
 
 export function TransactionSuccessScreen() {
   const navigate = useNavigate();
@@ -24,15 +25,12 @@ export function TransactionSuccessScreen() {
 
   return (
     <View style={styles.page}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => navigate(-1)} style={styles.backButton}>
-          <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Transaction Success</Text>
-        <View style={styles.headerRight}>
-          <ChargingFlowIcon name="help" size={20} color="#00696F" />
-        </View>
-      </View>
+      <ChargingFlowHeader
+        title="Transaction Success"
+        onBack={() => navigate(-1)}
+        rightIconName="help"
+        rightIconColor="#00696F"
+      />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}>
         <View style={styles.successIconWrap}>

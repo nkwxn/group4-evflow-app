@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, UIManager, View, useWindowDimensions, type ViewStyle } from 'react-native';
 import { colors, driverMapStyles as styles, LeafletMap } from '@evflow/ui';
-import { fetchConnectorTypes, fetchNearbyStations, fetchSpeedTiers, fetchStations, type ConnectorTypeApiItem, type SpeedTierApiItem, type StationApiItem } from '@evflow/shared';
+import { fetchConnectorTypes, fetchNearbyStations, fetchSpeedTiers, fetchStations, type ConnectorTypeApiItem, type SpeedTierApiItem, type StationApiItem, type StationConnectorTypeApiItem } from '@evflow/shared';
 import { getUserLocation, type LocationPermissionStatus } from './utils/location';
 import { FilterCategory, type FilterOption } from './components/FilterCategory';
 import { locationPinSvg } from './components/locationPinSvg';
@@ -713,18 +713,22 @@ type ConnectorRowProps = {
 };
 
 function ConnectorRow({ connector }: ConnectorRowProps) {
+  const label = typeof connector.label === 'string' ? connector.label : 'Unknown';
+  const speed = typeof connector.speed === 'string' ? connector.speed : String(connector.speed ?? '');
+  const total = typeof connector.total === 'number' ? connector.total : Number(connector.total) || 0;
+
   return (
     <View style={styles.connectorRow}>
       <View style={styles.connectorLeft}>
         <View style={styles.connectorIcon}>
           <SvgAssetIcon color="#00696F" height={17} name="lightning" svg={lightningIcon} width={15} />
         </View>
-        <Text style={styles.connectorName}>{connector.label}</Text>
+        <Text style={styles.connectorName}>{label}</Text>
       </View>
       <View style={styles.connectorMeta}>
-        <Text style={styles.connectorSpeed}>{connector.speed}</Text>
+        <Text style={styles.connectorSpeed}>{speed}</Text>
         <View style={styles.connectorDivider} />
-        <Text style={styles.connectorTotal}>Total {connector.total}</Text>
+        <Text style={styles.connectorTotal}>Total {total}</Text>
       </View>
     </View>
   );
@@ -780,20 +784,46 @@ async function loadSpkluStations({
 
 function toStation(item: StationApiItem): Station {
   const addressParts = [item.address, item.city, item.province].filter(Boolean);
-  const connectorLabels = item.connector_types.length ? item.connector_types : ['Unknown connector'];
+  const connectors = item.connector_types.length
+    ? item.connector_types.map((connector) => toConnectorInfo(connector, item))
+    : [
+        {
+          label: 'Unknown connector',
+          speed: formatSpeedTier(item.speed_tier),
+          total: item.connectors ?? 1
+        }
+      ];
 
   return {
     id: item.id,
     address: addressParts.join(', ') || 'Address not available',
-    connectors: connectorLabels.map((label) => ({
-      label,
-      speed: formatSpeedTier(item.speed_tier),
-      total: item.connectors ?? 1
-    })),
+    connectors,
     distanceKm: item.distance_km ?? undefined,
     latitude: item.latitude,
     longitude: item.longitude,
     name: item.name ?? 'Unnamed SPKLU Station'
+  };
+}
+
+function toConnectorInfo(connector: StationConnectorTypeApiItem, station: StationApiItem): ConnectorInfo {
+  if (typeof connector === 'string') {
+    return {
+      label: connector,
+      speed: formatSpeedTier(station.speed_tier),
+      total: typeof station.connectors === 'number' ? station.connectors : 1
+    };
+  }
+
+  const label = typeof connector.type === 'string' ? connector.type : 'Unknown connector';
+  const count = typeof connector.count === 'number' ? connector.count : null;
+  const stationConnectors = typeof station.connectors === 'number' ? station.connectors : 1;
+  const speedTier = typeof connector.speed_tier === 'string' ? connector.speed_tier : null;
+  const powerKw = typeof connector.power_kw === 'number' ? connector.power_kw : null;
+
+  return {
+    label: label || 'Unknown connector',
+    speed: powerKw ? `${formatKw(powerKw)} kW` : formatSpeedTier(speedTier ?? station.speed_tier),
+    total: count ?? stationConnectors
   };
 }
 

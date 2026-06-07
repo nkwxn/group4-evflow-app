@@ -4,6 +4,7 @@ import { chargingFlowStyles as styles } from '@evflow/ui';
 import { ChargingFlowIcon } from './components/ChargingFlowIcon';
 import chargingCompleteTickPng from '../assets/images/charging-complete-tick.png';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
+import { ChargingFlowHeader } from './components/ChargingFlowHeader';
 
 export function ChargingSuccessfulScreen() {
   const navigate = useNavigate();
@@ -11,15 +12,12 @@ export function ChargingSuccessfulScreen() {
 
   return (
     <View style={styles.page}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => navigate(-1)} style={styles.backButton}>
-          <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Charging Successful</Text>
-        <View style={styles.headerRight}>
-          <ChargingFlowIcon name="help" size={20} color="#00696F" />
-        </View>
-      </View>
+      <ChargingFlowHeader
+        title="Charging Successful"
+        onBack={() => navigate(-1)}
+        rightIconName="help"
+        rightIconColor="#00696F"
+      />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}>
         <View style={styles.successIconWrap}>

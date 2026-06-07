@@ -12,7 +12,7 @@ import type { DriverTabKey } from './types';
 export function EVDriverContainer() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const insets = useAppSafeAreaInsets();
   const desktop = width >= 768;
   const bottomNavOffset = desktop ? 0 : 84 + insets.bottom;
@@ -21,7 +21,7 @@ export function EVDriverContainer() {
   const activeTab = getActiveDriverTab(location.pathname);
 
   return (
-    <View style={styles.shell}>
+    <View style={[styles.shell, styles.viewportShell, { height, maxHeight: height, minHeight: height }]}>
       {desktop ? (
         <View style={[styles.sidebarWrap, { paddingTop: topInset }]}>
           <SideMenu
@@ -41,7 +41,13 @@ export function EVDriverContainer() {
         </View>
       ) : null}
 
-      <View style={[styles.content, activeTab === 'map' && Platform.OS === 'web' && { touchAction: 'none' } as any]}>
+      <View
+        style={[
+          styles.content,
+          styles.viewportContent,
+          activeTab === 'map' && Platform.OS === 'web' && { touchAction: 'none' } as any
+        ]}
+      >
         {activeTab === 'map' ? (
           <DriverMapScreen bottomOffset={bottomNavOffset} topInset={topInset} />
         ) : activeTab === 'wallet' ? (

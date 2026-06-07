@@ -940,9 +940,17 @@ export const evDriverContainerStyles = StyleSheet.create({
     flexDirection: 'row',
     minHeight: '100%'
   },
+  viewportShell: {
+    overflow: 'hidden'
+  },
   content: {
     flex: 1,
     position: 'relative'
+  },
+  viewportContent: {
+    height: '100%',
+    maxHeight: '100%',
+    overflow: 'hidden'
   },
   sidebarWrap: {
     backgroundColor: colors.background,

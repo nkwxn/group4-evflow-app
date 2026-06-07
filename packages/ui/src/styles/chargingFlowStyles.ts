@@ -11,10 +11,19 @@ export const chargingFlowStyles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
+    backgroundColor: colors.background,
+    borderBottomColor: '#e3eaed',
+    borderBottomWidth: 1,
+    elevation: 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
     minHeight: 64,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
+    shadowColor: '#0f242d',
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10
   },
   backButton: {
     alignItems: 'center',
@@ -29,8 +38,10 @@ export const chargingFlowStyles = StyleSheet.create({
   },
   headerTitle: {
     color: colors.text,
+    flexShrink: 1,
     fontSize: fontSizes.titleSmall,
-    fontWeight: '800'
+    fontWeight: '800',
+    textAlign: 'center'
   },
   headerRight: {
     alignItems: 'center',
@@ -462,12 +473,10 @@ export const chargingFlowStyles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 32
   },
-  progressCircle: {
+  progressRing: {
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderColor: '#01e0f0',
+    backgroundColor: '#dce7eb',
     borderRadius: 140,
-    borderWidth: 12,
     height: 240,
     justifyContent: 'center',
     width: 240,
@@ -475,6 +484,14 @@ export const chargingFlowStyles = StyleSheet.create({
     shadowOffset: { height: 0, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 16
+  },
+  progressCircle: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 112,
+    height: 212,
+    justifyContent: 'center',
+    width: 212
   },
   progressPercent: {
     color: '#0f242d',

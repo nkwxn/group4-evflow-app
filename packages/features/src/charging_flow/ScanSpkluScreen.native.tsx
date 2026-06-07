@@ -3,12 +3,10 @@ import { View, Text, Pressable, Linking } from 'react-native';
 import { useNavigate } from 'react-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { chargingFlowStyles as styles } from '@evflow/ui';
-import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
-import { ChargingFlowIcon } from './components/ChargingFlowIcon';
+import { ChargingFlowHeader } from './components/ChargingFlowHeader';
 
 export function ScanSpkluScreen() {
   const navigate = useNavigate();
-  const insets = useAppSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -28,13 +26,7 @@ export function ScanSpkluScreen() {
 
     return (
       <View style={styles.page}>
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <Pressable onPress={() => navigate('/ev-driver/map')} style={styles.backButton}>
-            <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Scan SPKLU QR Code</Text>
-          <View style={styles.headerRight} />
-        </View>
+        <ChargingFlowHeader title="Scan SPKLU QR Code" onBack={() => navigate('/ev-driver/map')} />
 
         <View style={styles.cameraContainer}>
           <View style={styles.permissionPrompt}>
@@ -60,15 +52,13 @@ export function ScanSpkluScreen() {
 
   return (
     <View style={styles.page}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => navigate('/ev-driver/map')} style={styles.backButton}>
-          <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Scan SPKLU QR Code</Text>
-        <View style={styles.headerRight}>
-          <ChargingFlowIcon name="flashlight" size={22} color="#191C1D" />
-        </View>
-      </View>
+      <ChargingFlowHeader
+        title="Scan SPKLU QR Code"
+        onBack={() => navigate('/ev-driver/map')}
+        rightIconName="flashlight"
+        rightIconColor="#191C1D"
+        rightIconSize={22}
+      />
 
       <View style={styles.cameraContainer}>
         <CameraView

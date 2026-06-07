@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { fetchEvModels, type EVModelApiItem } from '@evflow/shared';
+import { fetchConnectorTypes, fetchEvModels, type ConnectorTypeApiItem, type EVModelApiItem } from '@evflow/shared';
 import { registrationScreenStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { SvgAssetIcon } from '../shared/SvgAssetIcon';
@@ -13,7 +13,6 @@ type RegistrationScreenProps = {
   onRegister: () => void;
 };
 
-const connectorTypes = ['CCS Type 2', 'AC Type 2', 'GB/T'];
 const batteryThresholds = [10, 15, 20, 25, 30, 35, 40] as const;
 
 export function RegistrationScreen({ onBack, onLogin, onRegister }: RegistrationScreenProps) {
@@ -21,11 +20,14 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [selectedCarId, setSelectedCarId] = useState('');
-  const [selectedConnectorType, setSelectedConnectorType] = useState(connectorTypes[0]);
+  const [selectedConnectorType, setSelectedConnectorType] = useState('');
   const [batteryThreshold, setBatteryThreshold] = useState(20);
   const [permissionGranted, setPermissionGranted] = useState(true);
   const [evModels, setEvModels] = useState<EVModelApiItem[]>([]);
   const [evModelsError, setEvModelsError] = useState<string | null>(null);
+  const [connectorTypes, setConnectorTypes] = useState<ConnectorTypeApiItem[]>([]);
+  const [connectorTypesLoading, setConnectorTypesLoading] = useState(true);
+  const [connectorTypesError, setConnectorTypesError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +47,44 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
     }
 
     loadEvModels();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadConnectorTypes() {
+      setConnectorTypesLoading(true);
+      setConnectorTypesError(null);
+
+      try {
+        const response = await fetchConnectorTypes();
+
+        if (mounted) {
+          setConnectorTypes(response);
+          setSelectedConnectorType((current) => {
+            if (response.some((connectorType) => connectorType.name === current)) {
+              return current;
+            }
+
+            return response[0]?.name ?? '';
+          });
+        }
+      } catch (error) {
+        if (mounted) {
+          setConnectorTypesError(error instanceof Error ? error.message : 'Unable to load connector types.');
+        }
+      } finally {
+        if (mounted) {
+          setConnectorTypesLoading(false);
+        }
+      }
+    }
+
+    loadConnectorTypes();
 
     return () => {
       mounted = false;
@@ -125,47 +165,23 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
           <Text style={styles.label}>Main Connector Type</Text>
           <View style={styles.connectorRow}>
             {connectorTypes.map((connectorType) => {
-              const selected = connectorType === selectedConnectorType;
+              const selected = connectorType.name === selectedConnectorType;
 
               return (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  key={connectorType}
-                  onPress={() => setSelectedConnectorType(connectorType)}
+                  key={connectorType.name}
+                  onPress={() => setSelectedConnectorType(connectorType.name)}
                   style={[styles.connectorPill, selected && styles.selectedConnectorPill]}
                 >
-                  <Text style={[styles.connectorText, selected && styles.selectedConnectorText]}>{connectorType}</Text>
+                  <Text style={[styles.connectorText, selected && styles.selectedConnectorText]}>{connectorType.name}</Text>
                 </Pressable>
               );
             })}
           </View>
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <View style={styles.thresholdHeader}>
-            <Text style={styles.label}>Comfort Battery Threshold</Text>
-            <Text style={styles.thresholdValue}>{batteryThreshold}%</Text>
-          </View>
-          <Text style={styles.helperText}>Set your minimum battery level for smart routing</Text>
-          <PlatformSlider
-            style={{ width: '100%', height: 40, marginTop: 8 }}
-            minimumValue={10}
-            maximumValue={40}
-            step={5}
-            value={batteryThreshold}
-            onValueChange={setBatteryThreshold}
-            minimumTrackTintColor="#0bb2b2"
-            maximumTrackTintColor="#dde5e8"
-            thumbTintColor="#0bb2b2"
-          />
-          <View style={styles.thresholdLabels}>
-            {batteryThresholds.map((threshold) => (
-              <Pressable accessibilityRole="button" key={threshold} onPress={() => setBatteryThreshold(threshold)}>
-                <Text style={styles.thresholdLabel}>{threshold}%</Text>
-              </Pressable>
-            ))}
-          </View>
+          {connectorTypesLoading ? <Text style={styles.helperText}>Loading connector types...</Text> : null}
+          {connectorTypesError ? <Text style={styles.helperText}>Connector types unavailable.</Text> : null}
         </View>
 
         <Pressable
