@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Image, Pressable, ScrollView, Text, TextInput, View, type ImageSourcePropType } from 'react-native';
+import { login, saveAuthSession } from '@evflow/shared';
 import { loginScreenStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import evflowIcon from '../assets/images/evflow-icon.png';
@@ -12,6 +14,34 @@ type LoginScreenProps = {
 
 export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
   const insets = useAppSafeAreaInsets();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canSubmit = username.trim().length > 0 && password.length > 0 && !submitting;
+
+  const handleLogin = () => {
+    if (!canSubmit) {
+      setError('Enter your username and password.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    login({
+      password,
+      username: username.trim()
+    })
+      .then((session) => {
+        saveAuthSession(session);
+        onLogin();
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Unable to log in. Please try again.');
+      })
+      .finally(() => setSubmitting(false));
+  };
 
   return (
     <ScrollView
@@ -24,6 +54,7 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
       ]}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={styles.spacer} />
 
       <View style={styles.content}>
         <View style={styles.logoWrap}>
@@ -39,9 +70,14 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
             accessibilityLabel="Username"
             autoCapitalize="none"
             keyboardType="default"
+            onChangeText={(value) => {
+              setUsername(value);
+              setError(null);
+            }}
             placeholder="Enter your username"
             placeholderTextColor="#7c858b"
             style={styles.input}
+            value={username}
           />
         </View>
 
@@ -52,15 +88,28 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
           </View>
           <TextInput
             accessibilityLabel="Password"
+            onChangeText={(value) => {
+              setPassword(value);
+              setError(null);
+            }}
             placeholder="Minimum 8 characters"
             placeholderTextColor="#69777c"
             secureTextEntry
             style={styles.input}
+            value={password}
           />
         </View>
 
-        <Pressable accessibilityRole="button" onPress={onLogin} style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Log In</Text>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canSubmit }}
+          disabled={!canSubmit}
+          onPress={handleLogin}
+          style={[styles.loginButton, !canSubmit && styles.disabledButton]}
+        >
+          <Text style={styles.loginButtonText}>{submitting ? 'Logging In...' : 'Log In'}</Text>
         </Pressable>
 
         <View style={styles.signupSeparator} />
@@ -72,6 +121,8 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
           </Text>
         </Text>
       </View>
+
+      <View style={styles.spacer} />
     </ScrollView>
   );
 }

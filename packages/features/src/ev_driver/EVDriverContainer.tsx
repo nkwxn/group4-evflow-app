@@ -6,6 +6,7 @@ import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { DriverAssetIcon } from './components/DriverAssetIcon';
 import { DriverMapScreen } from './DriverMapScreen';
 import { MockDriverScreen } from './MockDriverScreen';
+import { TopUpSuccessScreen, TopUpWalletScreen } from './TopUpWalletScreen';
 import { WalletScreen } from './WalletScreen';
 import type { DriverTabKey } from './types';
 
@@ -19,6 +20,7 @@ export function EVDriverContainer() {
   const topInset = insets.top;
   const items = useDriverNavigationItems();
   const activeTab = getActiveDriverTab(location.pathname);
+  const walletFlow = getWalletFlow(location.pathname);
 
   return (
     <View style={[styles.shell, styles.viewportShell, { height, maxHeight: height, minHeight: height }]}>
@@ -48,7 +50,11 @@ export function EVDriverContainer() {
           activeTab === 'map' && Platform.OS === 'web' && { touchAction: 'none' } as any
         ]}
       >
-        {activeTab === 'map' ? (
+        {walletFlow === 'topup' ? (
+          <TopUpWalletScreen bottomOffset={bottomNavOffset} topInset={topInset} />
+        ) : walletFlow === 'success' ? (
+          <TopUpSuccessScreen bottomOffset={insets.bottom} topInset={topInset} />
+        ) : activeTab === 'map' ? (
           <DriverMapScreen bottomOffset={bottomNavOffset} topInset={topInset} />
         ) : activeTab === 'wallet' ? (
           <WalletScreen bottomInset={insets.bottom} bottomOffset={bottomNavOffset} topInset={topInset} />
@@ -56,7 +62,7 @@ export function EVDriverContainer() {
           <MockDriverScreen tabKey={activeTab} topInset={topInset} />
         )}
 
-        {!desktop ? (
+        {!desktop && walletFlow !== 'success' ? (
           <View style={[styles.bottomNavWrap, { paddingBottom: insets.bottom }]}>
             <BottomNavigation
               activeKey={activeTab}
@@ -84,6 +90,18 @@ function getActiveDriverTab(pathname: string): DriverTabKey {
   }
 
   return 'map';
+}
+
+function getWalletFlow(pathname: string) {
+  if (pathname === '/ev-driver/wallet/topup') {
+    return 'topup';
+  }
+
+  if (pathname === '/ev-driver/wallet/topup/success') {
+    return 'success';
+  }
+
+  return null;
 }
 
 function getDriverTabPath(tab: DriverTabKey) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Linking } from 'react-native';
 import { useNavigate } from 'react-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -9,6 +9,30 @@ export function ScanSpkluScreen() {
   const navigate = useNavigate();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [cameraActive, setCameraActive] = useState(true);
+  const [torchAvailable, setTorchAvailable] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const navigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stopCameraAndNavigate = (path: string) => {
+    if (navigationTimerRef.current) {
+      clearTimeout(navigationTimerRef.current);
+    }
+
+    setTorchOn(false);
+    setCameraActive(false);
+    navigationTimerRef.current = setTimeout(() => navigate(path), 250);
+  };
+
+  useEffect(() => {
+    return () => {
+      setTorchOn(false);
+      setCameraActive(false);
+      if (navigationTimerRef.current) {
+        clearTimeout(navigationTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!permission) {
     return <View />;
@@ -26,7 +50,7 @@ export function ScanSpkluScreen() {
 
     return (
       <View style={styles.page}>
-        <ChargingFlowHeader title="Scan SPKLU QR Code" onBack={() => navigate('/ev-driver/map')} />
+        <ChargingFlowHeader title="Scan SPKLU QR Code" onBack={() => stopCameraAndNavigate('/ev-driver/map')} />
 
         <View style={styles.cameraContainer}>
           <View style={styles.permissionPrompt}>
@@ -46,39 +70,49 @@ export function ScanSpkluScreen() {
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
-    // Move to next screen after scanning successfully
-    navigate('/charging-flow/initialize');
+    stopCameraAndNavigate('/charging-flow/initialize');
   };
 
   return (
     <View style={styles.page}>
       <ChargingFlowHeader
         title="Scan SPKLU QR Code"
-        onBack={() => navigate('/ev-driver/map')}
-        rightIconName="flashlight"
-        rightIconColor="#191C1D"
+        onBack={() => stopCameraAndNavigate('/ev-driver/map')}
+        rightIconName={torchAvailable && cameraActive ? 'flashlight' : undefined}
+        rightIconColor={torchOn ? '#01aeb8' : '#191C1D'}
         rightIconSize={22}
+        onRightPress={torchAvailable && cameraActive ? () => setTorchOn(current => !current) : undefined}
       />
 
       <View style={styles.cameraContainer}>
-        <CameraView
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ['qr']
-          }}
-          style={styles.camera}
-          facing="back"
-        >
-          <View style={styles.cameraOverlay}>
-            <View style={styles.cameraCutout} />
-            <Text style={styles.cameraInstructions}>
-              Position the QR code or barcode found on the SPKLU connector inside the frame to initialize payment.
-            </Text>
-            <Text style={styles.manualEntryLink} onPress={() => navigate('/charging-flow/initialize')}>
-              Can't scan? Enter Station ID manually
-            </Text>
-          </View>
-        </CameraView>
+        {cameraActive ? (
+          <CameraView
+            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: ['qr']
+            }}
+            style={styles.camera}
+            facing="back"
+            enableTorch={torchAvailable && torchOn}
+            onCameraReady={() => setTorchAvailable(true)}
+            onMountError={() => {
+              setTorchAvailable(false);
+              setTorchOn(false);
+            }}
+          >
+            <View style={styles.cameraOverlay}>
+              <View style={styles.cameraCutout} />
+              <Text style={styles.cameraInstructions}>
+                Position the QR code or barcode found on the SPKLU connector inside the frame to initialize payment.
+              </Text>
+              <Text style={styles.manualEntryLink} onPress={() => stopCameraAndNavigate('/charging-flow/initialize')}>
+                Can't scan? Enter Station ID manually
+              </Text>
+            </View>
+          </CameraView>
+        ) : (
+          <View style={[styles.camera, { backgroundColor: '#000' }]} />
+        )}
       </View>
     </View>
   );

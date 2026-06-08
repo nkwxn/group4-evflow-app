@@ -275,8 +275,12 @@ export const loginScreenStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 30,
     paddingVertical: 36
+  },
+  spacer: {
+    flex: 1
   },
   top: {
     alignItems: 'center',
@@ -379,10 +383,21 @@ export const loginScreenStyles = StyleSheet.create({
     minHeight: 49,
     width: '100%'
   },
+  disabledButton: {
+    opacity: 0.5
+  },
   loginButtonText: {
     color: colors.white,
     fontSize: fontSizes.bodyLarge,
     fontWeight: '500'
+  },
+  errorText: {
+    alignSelf: 'flex-start',
+    color: '#b32126',
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginTop: 12
   },
   signupSeparator: {
     backgroundColor: '#cfd8de',
@@ -874,10 +889,20 @@ export const registrationScreenStyles = StyleSheet.create({
     marginTop: 6,
     minHeight: 56
   },
+  disabledButton: {
+    opacity: 0.5
+  },
   registerButtonText: {
     color: colors.white,
     fontSize: fontSizes.bodyLarge,
     fontWeight: '900'
+  },
+  errorText: {
+    color: '#b32126',
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginTop: -4
   },
   loginPrompt: {
     color: '#4b555a',
@@ -1017,18 +1042,18 @@ export const filterCategoryStyles = StyleSheet.create({
   cardOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8
+    gap: 12
   },
   cardOption: {
     backgroundColor: '#e9ecef',
     borderColor: '#cad2d7',
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    minHeight: 60,
+    minHeight: 58,
     paddingHorizontal: 13,
     paddingVertical: 12,
     position: 'relative',
-    width: '48%'
+    width: '30.8%'
   },
   cardTickIcon: {
     position: 'absolute',
@@ -1045,7 +1070,7 @@ export const filterCategoryStyles = StyleSheet.create({
     color: '#718087',
     fontSize: fontSizes.eyebrow,
     lineHeight: 14,
-    marginTop: 2
+    marginTop: 4
   },
   selectedDescription: {
     color: colors.text
@@ -1460,6 +1485,307 @@ export const walletScreenStyles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSizes.control,
     fontWeight: '900'
+  },
+  topupHeader: {
+    alignItems: 'center',
+    backgroundColor: '#f7f8fd',
+    flexDirection: 'row',
+    gap: 12,
+    minHeight: 76,
+    paddingHorizontal: 24
+  },
+  topupBackButton: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    width: 44
+  },
+  topupBackIcon: {
+    color: colors.text,
+    fontSize: fontSizes.iconLarge,
+    fontWeight: '400',
+    lineHeight: 36
+  },
+  topupHeaderTitle: {
+    color: colors.text,
+    flex: 1,
+    fontSize: fontSizes.titleSmall,
+    fontWeight: '900',
+    lineHeight: 28
+  },
+  topupSuccessHeaderTitle: {
+    color: '#00a7ae'
+  },
+  topupHeaderSpacer: {
+    width: 44
+  },
+  topupContent: {
+    gap: 28,
+    marginHorizontal: 'auto',
+    maxWidth: 520,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    width: '100%'
+  },
+  topupBalanceCard: {
+    alignItems: 'center',
+    backgroundColor: '#eefafa',
+    borderRadius: 20,
+    boxShadow: '0 4px 10px rgba(15, 36, 45, 0.05)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 142,
+    overflow: 'hidden',
+    paddingHorizontal: 32
+  },
+  topupBalanceLabel: {
+    color: '#617089',
+    fontSize: fontSizes.bodyLarge,
+    fontWeight: '600',
+    lineHeight: 24
+  },
+  topupBalanceValue: {
+    color: '#10172b',
+    fontSize: fontSizes.display,
+    fontWeight: '900',
+    lineHeight: 36,
+    marginTop: 16
+  },
+  topupWalletBadge: {
+    alignItems: 'center',
+    backgroundColor: '#0bb8ae',
+    borderRadius: 16,
+    height: 84,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 84
+  },
+  topupCurrencyBubble: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 18,
+    bottom: 18,
+    height: 36,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 12,
+    width: 36
+  },
+  topupCurrencyText: {
+    color: '#0bb8ae',
+    fontSize: fontSizes.control,
+    fontWeight: '900'
+  },
+  topupFormSection: {
+    gap: 14,
+    marginTop: 12
+  },
+  topupSectionTitle: {
+    color: '#10172b',
+    fontSize: fontSizes.heading,
+    fontWeight: '900',
+    lineHeight: 24
+  },
+  topupInputWrap: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: '#596274',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    gap: 18,
+    minHeight: 82,
+    paddingHorizontal: 28
+  },
+  topupPrefix: {
+    color: '#0bb8ae',
+    fontSize: fontSizes.heading,
+    fontWeight: '900'
+  },
+  topupInput: {
+    color: '#10172b',
+    flex: 1,
+    fontSize: fontSizes.heading,
+    fontWeight: '600',
+    minHeight: 54
+  },
+  topupHelperRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    minHeight: 28
+  },
+  topupInfoIcon: {
+    alignItems: 'center',
+    borderColor: '#0bb8ae',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    height: 28,
+    justifyContent: 'center',
+    width: 28
+  },
+  topupInfoIconText: {
+    color: '#0bb8ae',
+    fontSize: fontSizes.control,
+    fontWeight: '900'
+  },
+  topupHelperText: {
+    color: '#8b99ad',
+    fontSize: fontSizes.control,
+    lineHeight: 20
+  },
+  topupErrorText: {
+    color: '#b32126'
+  },
+  topupPrimaryButton: {
+    alignItems: 'center',
+    backgroundColor: '#0bb8ae',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 16,
+    justifyContent: 'center',
+    minHeight: 86
+  },
+  topupDisabledButton: {
+    opacity: 0.5
+  },
+  topupPrimaryButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.heading,
+    fontWeight: '900'
+  },
+  topupTrustCard: {
+    alignItems: 'center',
+    backgroundColor: '#eefafa',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 24,
+    minHeight: 150,
+    paddingHorizontal: 28
+  },
+  topupTrustIcon: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: '#e3eaf0',
+    borderRadius: 32,
+    borderWidth: 1,
+    boxShadow: '0 3px 8px rgba(15, 36, 45, 0.12)',
+    height: 64,
+    justifyContent: 'center',
+    width: 64
+  },
+  topupTrustTextWrap: {
+    flex: 1,
+    gap: 12
+  },
+  topupTrustTitle: {
+    color: '#10172b',
+    fontSize: fontSizes.heading,
+    fontWeight: '900'
+  },
+  topupTrustText: {
+    color: '#617089',
+    fontSize: fontSizes.control,
+    lineHeight: 22
+  },
+  topupSuccessContent: {
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 'auto',
+    maxWidth: 520,
+    paddingHorizontal: 24,
+    paddingTop: 72,
+    width: '100%'
+  },
+  topupSuccessMarkWrap: {
+    alignItems: 'center',
+    height: 210,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 260
+  },
+  topupSuccessMark: {
+    alignItems: 'center',
+    backgroundColor: '#0aaeb6',
+    borderRadius: 100,
+    boxShadow: '0 16px 28px rgba(11, 184, 174, 0.18)',
+    height: 170,
+    justifyContent: 'center',
+    width: 170
+  },
+  topupSuccessCheck: {
+    color: colors.white,
+    fontSize: 92,
+    fontWeight: '400',
+    lineHeight: 104
+  },
+  topupConfettiDotLarge: {
+    backgroundColor: '#a6e2e7',
+    borderRadius: 5,
+    height: 10,
+    left: 36,
+    position: 'absolute',
+    top: 48,
+    width: 10
+  },
+  topupConfettiDotSmall: {
+    backgroundColor: '#a6e2e7',
+    borderRadius: 4,
+    height: 8,
+    position: 'absolute',
+    right: 28,
+    top: 164,
+    width: 8
+  },
+  topupConfettiDotTiny: {
+    backgroundColor: '#a6e2e7',
+    borderRadius: 3,
+    height: 6,
+    position: 'absolute',
+    right: 72,
+    top: 10,
+    width: 6
+  },
+  topupSuccessTitle: {
+    color: '#10172b',
+    fontSize: fontSizes.title,
+    fontWeight: '900',
+    lineHeight: 30,
+    marginTop: 26,
+    textAlign: 'center'
+  },
+  topupSuccessAmount: {
+    color: '#10172b',
+    fontSize: fontSizes.display,
+    fontWeight: '900',
+    lineHeight: 36,
+    marginTop: 22,
+    textAlign: 'center'
+  },
+  topupSuccessSubtitle: {
+    color: '#8b99ad',
+    fontSize: fontSizes.control,
+    lineHeight: 22,
+    marginTop: 18,
+    maxWidth: 300,
+    textAlign: 'center'
+  },
+  topupSuccessSpacer: {
+    flex: 1
+  },
+  topupDoneButton: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    backgroundColor: '#0aaeb6',
+    borderRadius: 20,
+    boxShadow: '0 12px 22px rgba(11, 184, 174, 0.18)',
+    justifyContent: 'center',
+    minHeight: 82
+  },
+  topupDoneButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.heading,
+    fontWeight: '900'
   }
 });
 
@@ -1787,8 +2113,10 @@ export const driverMapStyles = StyleSheet.create({
   },
   connectorLeft: {
     alignItems: 'center',
+    flex: 1,
     flexDirection: 'row',
-    gap: 9
+    gap: 9,
+    paddingRight: 10
   },
   connectorIcon: {
     alignItems: 'center',
@@ -1816,7 +2144,8 @@ export const driverMapStyles = StyleSheet.create({
   connectorSpeed: {
     color: '#4e5d63',
     fontSize: fontSizes.micro,
-    lineHeight: 11
+    lineHeight: 11,
+    textTransform: 'uppercase'
   },
   connectorDivider: {
     backgroundColor: '#cdd6da',

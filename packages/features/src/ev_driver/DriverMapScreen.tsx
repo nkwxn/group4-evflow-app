@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, UIManager, View, useWindowDimensions, type ViewStyle } from 'react-native';
 import { colors, driverMapStyles as styles, LeafletMap } from '@evflow/ui';
-import { fetchConnectorTypes, fetchNearbyStations, fetchSpeedTiers, fetchStations, type ConnectorTypeApiItem, type SpeedTierApiItem, type StationApiItem, type StationConnectorTypeApiItem } from '@evflow/shared';
+import { fetchConnectorTypes, fetchNearbyStations, fetchSpeedTiers, fetchStations, type ConnectorTypeApiItem, type SpeedTierApiItem, type StationApiItem, type StationConnectorApiItem, type StationConnectorTypeApiItem } from '@evflow/shared';
 import { getUserLocation, type LocationPermissionStatus } from './utils/location';
 import { FilterCategory, type FilterOption } from './components/FilterCategory';
 import { locationPinSvg } from './components/locationPinSvg';
@@ -21,19 +21,22 @@ type DriverMapScreenProps = {
 type DrawerMode = 'filter' | 'results' | 'detail';
 
 type ConnectorInfo = {
-  label: string;
-  speed: string;
-  total: number;
+  count: number;
+  powerKw: number | null;
+  speedTier: string | null;
+  type: string;
 };
 
 type Station = {
   id: string;
   address: string;
   connectors: ConnectorInfo[];
+  city: string | null;
   distanceKm?: number;
   latitude: number;
   longitude: number;
   name: string;
+  province: string | null;
 };
 
 type Coordinates = {
@@ -61,6 +64,8 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
   const [expanded, setExpanded] = useState(false);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('results');
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [connectorTypes, setConnectorTypes] = useState<string[]>([]);
   const [chargingSpeeds, setChargingSpeeds] = useState<string[]>([]);
   const [appliedConnectorTypes, setAppliedConnectorTypes] = useState<ConnectorTypeApiItem[]>([]);
@@ -82,6 +87,9 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
   const requestedLocationPermissionRef = useRef(false);
   const selectedStationRef = useRef<Station | null>(selectedStation);
   const expandedRef = useRef(expanded);
+  const searchQueryRef = useRef(searchQuery);
+  const searchRestoreStateRef = useRef<{ drawerMode: DrawerMode; expanded: boolean; selectedStation: Station | null } | null>(null);
+  const searchActive = searchFocused || searchQuery.trim().length > 0;
   useEffect(() => {
     selectedStationRef.current = selectedStation;
   }, [selectedStation]);
@@ -100,6 +108,10 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) => {
+          if (searchActive) {
+            return false;
+          }
+
           const isSwipingDown = gestureState.dy > 8;
           const isSwipingUp = gestureState.dy < -8;
 
@@ -113,10 +125,14 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           return isSwipingDown || isSwipingUp;
         },
         onPanResponderRelease: (_, gestureState) => {
+          if (searchActive) {
+            return;
+          }
+
           updateSheetSizeFromDelta(gestureState.dy, setExpanded);
         }
       }),
-    []
+    [searchActive]
   );
 
   const animateNext = () => {
@@ -267,25 +283,77 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
       speedTierOptions.map((speedTier) => ({
         key: speedTier.id,
         label: speedTier.label,
-        description: `${formatPowerRange(speedTier)} - ${speedTier.count} stations`
+        description: formatPowerRange(speedTier)
       })),
     [speedTierOptions]
   );
 
+  const filteredStations = useMemo(() => filterStationsByKeyword(stations, searchQuery), [searchQuery, stations]);
+  const visibleStations = searchQuery.trim() ? filteredStations : stations;
   const stationMarkers = useMemo(
     () =>
-      stations.map((station) => ({
+      visibleStations.map((station) => ({
         id: station.id,
         label: station.name,
         latitude: station.latitude,
         longitude: station.longitude
       })),
-    [stations]
+    [visibleStations]
   );
   const stationMarkerIcon = useMemo(() => colorSvg(locationPinSvg, colors.text), []);
   const detailSheetHeight = width < 768 ? Math.floor((height - bottomOffset) / 2) : undefined;
   const filterSheetHeight = width < 768 ? getMobileFilterSheetHeight(height, topInset, bottomOffset) : undefined;
+  const searchSheetHeight = getSearchResultsSheetHeight(height, topInset, bottomOffset);
+
+  const activateSearchResults = () => {
+    if (!searchRestoreStateRef.current) {
+      searchRestoreStateRef.current = { drawerMode, expanded, selectedStation };
+    }
+
+    animateNext();
+    setSearchFocused(true);
+    setSelectedStation(null);
+    setDrawerMode('results');
+    setExpanded(true);
+  };
+
+  const restoreAfterSearchIfEmpty = () => {
+    setSearchFocused(false);
+
+    if (searchQueryRef.current.trim()) {
+      return;
+    }
+
+    const restoreState = searchRestoreStateRef.current;
+    searchRestoreStateRef.current = null;
+
+    if (!restoreState) {
+      return;
+    }
+
+    animateNext();
+    setSelectedStation(restoreState.selectedStation);
+    setDrawerMode(restoreState.drawerMode);
+    setExpanded(restoreState.expanded);
+  };
+
+  const handleSearchChange = (value: string) => {
+    searchQueryRef.current = value;
+    setSearchQuery(value);
+
+    if (value.trim()) {
+      activateSearchResults();
+      return;
+    }
+
+    if (!searchFocused) {
+      restoreAfterSearchIfEmpty();
+    }
+  };
+
   const openStationDetail = (station: Station) => {
+    searchRestoreStateRef.current = null;
+    setSearchFocused(false);
     if (!selectedStation) {
       previousMapViewRef.current = mapView;
       previousResultsExpandedRef.current = expanded;
@@ -339,9 +407,13 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
         </View>
         <TextInput
           accessibilityLabel="Search location"
+          onBlur={restoreAfterSearchIfEmpty}
+          onChangeText={handleSearchChange}
+          onFocus={activateSearchResults}
           placeholder="Search location..."
           placeholderTextColor="#819097"
           style={styles.searchInput}
+          value={searchQuery}
         />
         <Pressable
           accessibilityLabel="Open filters"
@@ -357,11 +429,16 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
         </Pressable>
       </View>
 
-        <View style={[styles.sheet, getSheetStateStyle(drawerMode, expanded, detailSheetHeight, filterSheetHeight), { bottom: bottomOffset }]} {...drawerPanResponder.panHandlers}>
+        <View style={[styles.sheet, getSheetStateStyle(drawerMode, expanded, detailSheetHeight, filterSheetHeight, searchActive ? searchSheetHeight : undefined), { bottom: bottomOffset }]} {...drawerPanResponder.panHandlers}>
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded }}
             onPress={() => {
+              if (searchActive) {
+                setExpanded(true);
+                return;
+              }
+
               animateNext();
               setExpanded((current) => !current);
             }}
@@ -412,6 +489,7 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
           {drawerMode === 'results' ? (
             <ResultsDrawer
               expanded={expanded}
+              filteredBySearch={searchQuery.trim().length > 0}
               loading={stationsLoading}
               onFilter={() => {
                 animateNext();
@@ -422,7 +500,7 @@ export function DriverMapScreen({ bottomOffset = 0, topInset = 0 }: DriverMapScr
                 openStationDetail(station);
               }}
               onScroll={handleScroll}
-              stations={stations}
+              stations={filteredStations}
               stationsError={stationsError}
               locationPermissionStatus={locationPermissionStatus}
               locationPermissionLoading={locationPermissionLoading}
@@ -546,6 +624,7 @@ function FilterDrawer({
 }
 
 type ResultsDrawerProps = {
+  filteredBySearch: boolean;
   hasUserLocation: boolean;
   expanded: boolean;
   locationPermissionLoading: boolean;
@@ -561,6 +640,7 @@ type ResultsDrawerProps = {
 
 function ResultsDrawer({
   expanded,
+  filteredBySearch,
   hasUserLocation,
   loading,
   locationPermissionLoading,
@@ -577,7 +657,7 @@ function ResultsDrawer({
   return (
     <View style={styles.drawerBody}>
       <View style={styles.resultsHeader}>
-        <Text style={styles.resultsTitle}>Nearby SPKLU Stations</Text>
+        <Text style={styles.resultsTitle}>{filteredBySearch ? 'Search Results' : 'Nearby SPKLU Stations'}</Text>
         <Pressable accessibilityRole="button" onPress={onFilter} style={styles.filterButton}>
           <SvgAssetIcon color="#4c5960" height={14} name="filter" svg={filterSettingIcon} width={14} />
           <Text style={styles.filterButtonText}>Filter</Text>
@@ -616,7 +696,9 @@ function ResultsDrawer({
         >
           {loading ? <Text style={styles.stationAddress}>Loading nearby SPKLU stations...</Text> : null}
           {!loading && stationsError ? <Text style={styles.stationAddress}>{stationsError}</Text> : null}
-          {!loading && !stationsError && stations.length === 0 ? <Text style={styles.stationAddress}>No nearby SPKLU stations found.</Text> : null}
+          {!loading && !stationsError && stations.length === 0 ? (
+            <Text style={styles.stationAddress}>{filteredBySearch ? 'No SPKLU stations match your search.' : 'No nearby SPKLU stations found.'}</Text>
+          ) : null}
           {!loading && !stationsError
             ? stations.map((station) => <StationCard key={station.id} station={station} onPress={() => onSelectStation(station)} />)
             : null}
@@ -678,8 +760,8 @@ function StationDetailDrawer({ expanded, station, onClose, onScroll }: StationDe
         >
           <Text style={styles.stationAddress}>{station.address}</Text>
           <View style={styles.connectorList}>
-            {station.connectors.map((connector) => (
-              <ConnectorRow connector={connector} key={connector.label} />
+            {station.connectors.map((connector, index) => (
+              <ConnectorRow connector={connector} key={`${connector.type}-${connector.speedTier ?? 'unknown'}-${connector.powerKw ?? 'unknown'}-${index}`} />
             ))}
           </View>
         </ScrollView>
@@ -700,8 +782,8 @@ function StationCard({ station, onPress }: StationCardProps) {
       <Text style={styles.stationAddress}>{station.address}</Text>
       {station.distanceKm !== undefined ? <Text style={styles.connectorSpeed}>{station.distanceKm.toFixed(1)} km away</Text> : null}
       <View style={styles.connectorList}>
-        {station.connectors.map((connector) => (
-          <ConnectorRow connector={connector} key={connector.label} />
+        {station.connectors.map((connector, index) => (
+          <ConnectorRow connector={connector} key={`${connector.type}-${connector.speedTier ?? 'unknown'}-${connector.powerKw ?? 'unknown'}-${index}`} />
         ))}
       </View>
     </Pressable>
@@ -713,9 +795,8 @@ type ConnectorRowProps = {
 };
 
 function ConnectorRow({ connector }: ConnectorRowProps) {
-  const label = typeof connector.label === 'string' ? connector.label : 'Unknown';
-  const speed = typeof connector.speed === 'string' ? connector.speed : String(connector.speed ?? '');
-  const total = typeof connector.total === 'number' ? connector.total : Number(connector.total) || 0;
+  const type = connector.type || 'Unknown connector';
+  const speedTier = formatSpeedTier(connector.speedTier);
 
   return (
     <View style={styles.connectorRow}>
@@ -723,12 +804,12 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
         <View style={styles.connectorIcon}>
           <SvgAssetIcon color="#00696F" height={17} name="lightning" svg={lightningIcon} width={15} />
         </View>
-        <Text style={styles.connectorName}>{label}</Text>
+        <Text style={styles.connectorName}>{type}</Text>
       </View>
       <View style={styles.connectorMeta}>
-        <Text style={styles.connectorSpeed}>{speed}</Text>
+        <Text style={styles.connectorSpeed}>{speedTier}</Text>
         <View style={styles.connectorDivider} />
-        <Text style={styles.connectorTotal}>Total {total}</Text>
+        <Text style={styles.connectorTotal}>Total {connector.count}</Text>
       </View>
     </View>
   );
@@ -784,46 +865,62 @@ async function loadSpkluStations({
 
 function toStation(item: StationApiItem): Station {
   const addressParts = [item.address, item.city, item.province].filter(Boolean);
-  const connectors = item.connector_types.length
-    ? item.connector_types.map((connector) => toConnectorInfo(connector, item))
+  const apiConnectors = Array.isArray(item.connectors) ? item.connectors : [];
+  const connectors = apiConnectors.length
+    ? apiConnectors.map((connector) => toConnectorInfo(connector, item))
+    : item.connector_types.length
+    ? item.connector_types.map((connector) => toLegacyConnectorInfo(connector, item))
     : [
         {
-          label: 'Unknown connector',
-          speed: formatSpeedTier(item.speed_tier),
-          total: item.connectors ?? 1
+          count: 1,
+          powerKw: item.power_kw,
+          speedTier: item.speed_tier,
+          type: 'Unknown connector'
         }
       ];
 
   return {
     id: item.id,
     address: addressParts.join(', ') || 'Address not available',
+    city: item.city,
     connectors,
     distanceKm: item.distance_km ?? undefined,
     latitude: item.latitude,
     longitude: item.longitude,
-    name: item.name ?? 'Unnamed SPKLU Station'
+    name: item.name ?? 'Unnamed SPKLU Station',
+    province: item.province
   };
 }
 
-function toConnectorInfo(connector: StationConnectorTypeApiItem, station: StationApiItem): ConnectorInfo {
+function toConnectorInfo(connector: StationConnectorApiItem, station: StationApiItem): ConnectorInfo {
+  return {
+    count: typeof connector.count === 'number' ? connector.count : 1,
+    powerKw: typeof connector.power_kw === 'number' ? connector.power_kw : station.power_kw,
+    speedTier: typeof connector.speed_tier === 'string' ? connector.speed_tier : station.speed_tier,
+    type: typeof connector.type === 'string' && connector.type ? connector.type : 'Unknown connector'
+  };
+}
+
+function toLegacyConnectorInfo(connector: StationConnectorTypeApiItem, station: StationApiItem): ConnectorInfo {
   if (typeof connector === 'string') {
     return {
-      label: connector,
-      speed: formatSpeedTier(station.speed_tier),
-      total: typeof station.connectors === 'number' ? station.connectors : 1
+      count: 1,
+      powerKw: station.power_kw,
+      speedTier: station.speed_tier,
+      type: connector
     };
   }
 
   const label = typeof connector.type === 'string' ? connector.type : 'Unknown connector';
   const count = typeof connector.count === 'number' ? connector.count : null;
-  const stationConnectors = typeof station.connectors === 'number' ? station.connectors : 1;
   const speedTier = typeof connector.speed_tier === 'string' ? connector.speed_tier : null;
   const powerKw = typeof connector.power_kw === 'number' ? connector.power_kw : null;
 
   return {
-    label: label || 'Unknown connector',
-    speed: powerKw ? `${formatKw(powerKw)} kW` : formatSpeedTier(speedTier ?? station.speed_tier),
-    total: count ?? stationConnectors
+    count: count ?? 1,
+    powerKw: powerKw ?? station.power_kw,
+    speedTier: speedTier ?? station.speed_tier,
+    type: label || 'Unknown connector'
   };
 }
 
@@ -886,6 +983,38 @@ function getMobileFilterSheetHeight(screenHeight: number, topInset: number, bott
   return Math.max(104, Math.floor(cappedHeight));
 }
 
+function getSearchResultsSheetHeight(screenHeight: number, topInset: number, bottomOffset: number) {
+  const searchBarBottom = topInset + 24 + 66 + 12;
+  const maxHeightWithSearchVisible = screenHeight - bottomOffset - searchBarBottom;
+
+  return Math.max(180, Math.floor(maxHeightWithSearchVisible));
+}
+
+function filterStationsByKeyword(stations: Station[], query: string) {
+  const keywords = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!keywords.length) {
+    return stations;
+  }
+
+  return stations.filter((station) => {
+    const searchableText = [
+      station.name,
+      station.address,
+      station.province ?? '',
+      station.city ?? ''
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return keywords.every((keyword) => searchableText.includes(keyword));
+  });
+}
+
 function toggleSelected(key: string, selectedKeys: string[], setSelectedKeys: (keys: string[]) => void) {
   setSelectedKeys(selectedKeys.includes(key) ? selectedKeys.filter((selectedKey) => selectedKey !== key) : [...selectedKeys, key]);
 }
@@ -937,11 +1066,11 @@ type WebTransitionStyle = ViewStyle & {
   transitionTimingFunction?: string;
 };
 
-function getSheetStateStyle(mode: DrawerMode, expanded: boolean, detailSheetHeight?: number, filterSheetHeight?: number): WebTransitionStyle {
+function getSheetStateStyle(mode: DrawerMode, expanded: boolean, detailSheetHeight?: number, filterSheetHeight?: number, resultsSheetHeight?: number): WebTransitionStyle {
   const expandedHeights: Record<DrawerMode, number> = {
     detail: detailSheetHeight ?? 254,
     filter: filterSheetHeight ?? 430,
-    results: 650
+    results: resultsSheetHeight ?? 650
   };
 
   return {

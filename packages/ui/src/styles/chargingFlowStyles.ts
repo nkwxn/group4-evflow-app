@@ -7,6 +7,7 @@ export const chargingFlowStyles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
     minHeight: '100%',
+    overflow: 'hidden',
     width: '100%'
   },
   header: {
@@ -23,6 +24,7 @@ export const chargingFlowStyles = StyleSheet.create({
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
+    flexShrink: 0,
     zIndex: 10
   },
   backButton: {
@@ -65,6 +67,10 @@ export const chargingFlowStyles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1
+  },
+  scrollBody: {
+    flex: 1,
+    width: '100%'
   },
   cameraContainer: {
     flex: 1,
@@ -164,6 +170,19 @@ export const chargingFlowStyles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     gap: 12
+  },
+  stationInfoCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start'
+  },
+  stationInfoCardImage: {
+    alignItems: 'center',
+    backgroundColor: '#e0f7fa',
+    borderRadius: 10,
+    height: 44,
+    justifyContent: 'center',
+    width: 44
   },
   stationName: {
     color: '#0f242d',
@@ -298,7 +317,7 @@ export const chargingFlowStyles = StyleSheet.create({
   metricLabel: {
     color: '#6e7a80',
     fontSize: fontSizes.caption,
-    fontWeight: '700',
+    fontWeight: '600',
     textTransform: 'uppercase'
   },
   metricValueRow: {
@@ -308,8 +327,8 @@ export const chargingFlowStyles = StyleSheet.create({
   },
   metricValue: {
     color: '#0f242d',
-    fontSize: fontSizes.titleMedium,
-    fontWeight: '800'
+    fontSize: fontSizes.heading,
+    fontWeight: '600'
   },
   footerSpacer: {
     flex: 1

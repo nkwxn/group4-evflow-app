@@ -17,7 +17,7 @@ export type StationApiItem = {
   power_kw: number | null;
   charge_type: string | null;
   speed_tier: string | null;
-  connectors: number | null;
+  connectors: StationConnectorApiItem[];
   connector_types: StationConnectorTypeApiItem[];
   connector_inferred: boolean | null;
   status: string | null;
@@ -34,6 +34,14 @@ export type StationConnectorTypeApiItem =
       power_kw?: number | null;
       type_inferred?: boolean | null;
     };
+
+export type StationConnectorApiItem = {
+  type: string;
+  count: number;
+  speed_tier: string | null;
+  power_kw: number | null;
+  type_inferred: boolean;
+};
 
 export type StationListApiResponse = {
   total: number;

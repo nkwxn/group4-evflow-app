@@ -19,6 +19,8 @@ export function AppRoutes() {
       />
       <Route path="/register" element={<RegistrationRoute />} />
       <Route path="/ev-driver" element={<Navigate replace to="/ev-driver/map" />} />
+      <Route path="/ev-driver/wallet/topup" element={<EVDriverContainer />} />
+      <Route path="/ev-driver/wallet/topup/success" element={<EVDriverContainer />} />
       <Route path="/ev-driver/:tab" element={<EVDriverContainer />} />
       <Route path="/charging-flow/scan" element={<ScanSpkluScreen />} />
       <Route path="/charging-flow/initialize" element={<InitializeChargingScreen />} />

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { fetchConnectorTypes, fetchEvModels, type ConnectorTypeApiItem, type EVModelApiItem } from '@evflow/shared';
+import { fetchConnectorTypes, fetchEvModels, register, saveAuthSession, type ConnectorTypeApiItem, type EVModelApiItem } from '@evflow/shared';
 import { registrationScreenStyles as styles } from '@evflow/ui';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { SvgAssetIcon } from '../shared/SvgAssetIcon';
@@ -28,6 +28,8 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
   const [connectorTypes, setConnectorTypes] = useState<ConnectorTypeApiItem[]>([]);
   const [connectorTypesLoading, setConnectorTypesLoading] = useState(true);
   const [connectorTypesError, setConnectorTypesError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -105,6 +107,38 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
   );
   const selectedBatteryIndex = batteryThresholds.findIndex((threshold) => threshold === batteryThreshold);
   const batteryPercent = (selectedBatteryIndex / (batteryThresholds.length - 1)) * 100;
+  const canRegister =
+    username.trim().length >= 3 &&
+    password.length >= 8 &&
+    Boolean(selectedCarId) &&
+    Boolean(selectedConnectorType) &&
+    !submitting;
+
+  const handleRegister = () => {
+    if (!canRegister) {
+      setSubmitError('Complete all fields. Password must be at least 8 characters.');
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    register({
+      ev_model_id: selectedCarId,
+      location_consent: permissionGranted,
+      main_connector_type: selectedConnectorType,
+      password,
+      username: username.trim()
+    })
+      .then((session) => {
+        saveAuthSession(session);
+        onRegister();
+      })
+      .catch((error) => {
+        setSubmitError(error instanceof Error ? error.message : 'Unable to register. Please try again.');
+      })
+      .finally(() => setSubmitting(false));
+  };
 
   return (
     <View style={styles.page}>
@@ -128,7 +162,10 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
           <TextInput
             accessibilityLabel="Username"
             autoCapitalize="none"
-            onChangeText={setUsername}
+            onChangeText={(value) => {
+              setUsername(value);
+              setSubmitError(null);
+            }}
             placeholder="Enter your username"
             placeholderTextColor="#9aa4a9"
             style={styles.input}
@@ -141,9 +178,13 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
           <TextInput
             accessibilityLabel="Password"
             autoCapitalize="none"
-            onChangeText={setPassword}
+            onChangeText={(value) => {
+              setPassword(value);
+              setSubmitError(null);
+            }}
             placeholder="Enter your password"
             placeholderTextColor="#9aa4a9"
+            secureTextEntry
             style={styles.input}
             value={password}
           />
@@ -154,7 +195,10 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
           <View style={styles.select}>
             <ModelPicker
               selectedValue={selectedCarId}
-              onValueChange={setSelectedCarId}
+              onValueChange={(value) => {
+                setSelectedCarId(value);
+                setSubmitError(null);
+              }}
               options={evModelOptions}
               placeholderLabel={evModelsError ? 'EV models unavailable' : 'Select your car'}
             />
@@ -172,7 +216,10 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   key={connectorType.name}
-                  onPress={() => setSelectedConnectorType(connectorType.name)}
+                  onPress={() => {
+                    setSelectedConnectorType(connectorType.name);
+                    setSubmitError(null);
+                  }}
                   style={[styles.connectorPill, selected && styles.selectedConnectorPill]}
                 >
                   <Text style={[styles.connectorText, selected && styles.selectedConnectorText]}>{connectorType.name}</Text>
@@ -201,8 +248,16 @@ export function RegistrationScreen({ onBack, onLogin, onRegister }: Registration
           </View>
         </Pressable>
 
-        <Pressable accessibilityRole="button" onPress={onRegister} style={styles.registerButton}>
-          <Text style={styles.registerButtonText}>Register</Text>
+        {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canRegister }}
+          disabled={!canRegister}
+          onPress={handleRegister}
+          style={[styles.registerButton, !canRegister && styles.disabledButton]}
+        >
+          <Text style={styles.registerButtonText}>{submitting ? 'Registering...' : 'Register'}</Text>
         </Pressable>
 
         <Text style={styles.loginPrompt}>

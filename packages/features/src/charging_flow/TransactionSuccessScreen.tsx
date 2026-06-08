@@ -28,11 +28,13 @@ export function TransactionSuccessScreen() {
       <ChargingFlowHeader
         title="Transaction Success"
         onBack={() => navigate(-1)}
-        rightIconName="help"
-        rightIconColor="#00696F"
       />
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}>
+      <ScrollView
+        style={styles.scrollBody}
+        contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom, paddingLeft: 24 + insets.left, paddingRight: 24 + insets.right }]}
+        scrollIndicatorInsets={{ bottom: insets.bottom, left: insets.left, right: insets.right }}
+      >
         <View style={styles.successIconWrap}>
           <Image source={paymentCompletePng as unknown as ImageSourcePropType} style={{ width: 80, height: 80 }} />
         </View>

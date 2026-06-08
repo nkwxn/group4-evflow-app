@@ -26,7 +26,7 @@ export function ChargingFlowHeader({
   ) : null;
 
   return (
-    <View style={[styles.header, { paddingTop: insets.top }]}>
+    <View style={[styles.header, { paddingLeft: 20 + insets.left, paddingRight: 20 + insets.right, paddingTop: insets.top }]}>
       <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={styles.backButton}>
         <ChargingFlowIcon name="leftArrow" size={24} color="#005F64" />
       </Pressable>

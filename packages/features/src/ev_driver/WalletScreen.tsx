@@ -1,6 +1,8 @@
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { walletScreenStyles as styles } from '@evflow/ui';
+import { fetchWalletBalance, fetchWalletTopups, type TopupApiItem } from '@evflow/shared';
 import { SvgAssetIcon } from '../shared/SvgAssetIcon';
 import { walletTransactions, type WalletTransaction } from './walletTransactions';
 
@@ -14,10 +16,45 @@ const totalBalance = 250000;
 const historyPinOffset = 108;
 
 export function WalletScreen({ bottomInset = 0, bottomOffset = 0, topInset = 0 }: WalletScreenProps) {
+  const navigate = useNavigate();
   const { height, width } = useWindowDimensions();
+  const [balance, setBalance] = useState(totalBalance);
+  const [apiTopups, setApiTopups] = useState<TopupApiItem[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
   const [isHistoryPinned, setIsHistoryPinned] = useState(false);
   const desktop = width >= 768;
+  const transactions = useMemo(
+    () => [...apiTopups.map(mapTopupToTransaction), ...walletTransactions],
+    [apiTopups]
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    fetchWalletBalance()
+      .then((wallet) => {
+        if (mounted) {
+          setBalance(wallet.balance_idr);
+        }
+      })
+      .catch((error) => {
+        console.error('Unable to fetch wallet balance', error);
+      });
+
+    fetchWalletTopups()
+      .then((topups) => {
+        if (mounted) {
+          setApiTopups(topups);
+        }
+      })
+      .catch((error) => {
+        console.error('Unable to fetch wallet top-ups', error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <View style={styles.page}>
@@ -39,9 +76,9 @@ export function WalletScreen({ bottomInset = 0, bottomOffset = 0, topInset = 0 }
         <View style={styles.balanceCard}>
           <View>
             <Text style={styles.balanceLabel}>Total Balance</Text>
-            <Text style={styles.balanceValue}>{formatCurrency(totalBalance)}</Text>
+            <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
           </View>
-          <Pressable accessibilityRole="button" style={styles.topUpButton}>
+          <Pressable accessibilityRole="button" onPress={() => navigate('/ev-driver/wallet/topup')} style={styles.topUpButton}>
             <Text style={styles.topUpButtonText}>Top Up</Text>
           </Pressable>
         </View>
@@ -54,21 +91,13 @@ export function WalletScreen({ bottomInset = 0, bottomOffset = 0, topInset = 0 }
         </View>
 
         <View style={styles.transactionList}>
-          {walletTransactions.map((transaction) => (
+          {transactions.map((transaction) => (
             <TransactionRow
               key={transaction.id}
               transaction={transaction}
               onPress={() => setSelectedTransaction(transaction)}
             />
           ))}
-        </View>
-
-        <View style={styles.cashbackBanner}>
-          <Text style={styles.cashbackTitle}>Cashback !</Text>
-          <Text style={styles.cashbackText}>Get 20% cashback from chosen SPKLU</Text>
-          <View style={styles.cashbackCta}>
-            <Text style={styles.cashbackCtaText}>CHECK NOW</Text>
-          </View>
         </View>
       </ScrollView>
 
@@ -286,4 +315,28 @@ function formatDate(isoDate: string) {
     year: 'numeric',
     timeZone: 'Asia/Jakarta'
   }).format(new Date(isoDate));
+}
+
+function mapTopupToTransaction(topup: TopupApiItem): WalletTransaction {
+  const success = topup.status.toLowerCase() === 'paid';
+
+  return {
+    id: topup.id,
+    amount: topup.amount_idr,
+    description: topup.invoice_url ? 'Xendit Invoice' : 'Wallet top-up',
+    destination: 'EV-Wallet',
+    occurredAt: topup.paid_at ?? topup.created_at,
+    orderId: topup.external_id,
+    referenceNo: topup.xendit_invoice_id ?? topup.external_id,
+    status: success ? 'success' : 'failed',
+    title: success ? 'Top Up - Xendit' : `Top Up - ${formatTopupStatus(topup.status)}`,
+    type: 'topup'
+  };
+}
+
+function formatTopupStatus(status: string) {
+  return status
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
 }
