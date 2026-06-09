@@ -17,7 +17,7 @@ export function MockDriverScreen({ tabKey, topInset = 0 }: MockDriverScreenProps
   return (
     <View style={[styles.page, { paddingTop: 24 + topInset }]}>
       <Text style={styles.title}>{labels[tabKey]}</Text>
-      <Text style={styles.body}>This is a sandbox screen. The production UI for this menu has not been defined yet.</Text>
+      <Text style={styles.body}>The feature for this screen is under development.</Text>
     </View>
   );
 }

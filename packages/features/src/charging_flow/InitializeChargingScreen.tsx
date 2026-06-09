@@ -1,10 +1,13 @@
-import { View, Text, Pressable, ScrollView, TextInput } from 'react-native';
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigate } from 'react-router';
 import { chargingFlowStyles as styles } from '@evflow/ui';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChargingFlowIcon } from './components/ChargingFlowIcon';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { ChargingFlowHeader } from './components/ChargingFlowHeader';
+
+import { getUserLocation } from '../ev_driver/utils/location';
+import { fetchNearbyStations, fetchStations, fetchStation, type StationApiItem, type StationConnectorApiItem } from '@evflow/shared';
 
 const BASE_RATE = 2466;
 const ADMIN_FEE = 2500;
@@ -18,16 +21,69 @@ export function InitializeChargingScreen() {
   const insets = useAppSafeAreaInsets();
   const [energy, setEnergy] = useState('');
   const [isCalculated, setIsCalculated] = useState(false);
+  
+  const [station, setStation] = useState<StationApiItem | null>(null);
+  const [connector, setConnector] = useState<StationConnectorApiItem | null>(null);
+  const [randomSpeed, setRandomSpeed] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStation() {
+      try {
+        const locationResult = await getUserLocation({ requestPermission: false });
+        
+        let targetStationId = '';
+        
+        if (locationResult.coordinates) {
+          const { latitude, longitude } = locationResult.coordinates;
+          const nearby = await fetchNearbyStations({ lat: latitude, lon: longitude, radius: 30, limit: 10 });
+          if (nearby.length > 0) {
+            const randomNearby = nearby[Math.floor(Math.random() * nearby.length)];
+            targetStationId = randomNearby.id;
+          }
+        }
+        
+        if (!targetStationId) {
+          const stationsResult = await fetchStations({ limit: 50 });
+          if (stationsResult.items.length > 0) {
+            const randomAny = stationsResult.items[Math.floor(Math.random() * stationsResult.items.length)];
+            targetStationId = randomAny.id;
+          }
+        }
+        
+        if (targetStationId) {
+          const fullStation = await fetchStation(targetStationId);
+          setStation(fullStation);
+          
+          if (fullStation.connectors && fullStation.connectors.length > 0) {
+            const randomConn = fullStation.connectors[Math.floor(Math.random() * fullStation.connectors.length)];
+            setConnector(randomConn);
+            
+            if (!randomConn.power_kw) {
+              setRandomSpeed(Math.floor(Math.random() * 80) + 1); // 1 to 80 kW
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch station:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadStation();
+  }, []);
 
   const parsedEnergy = parseFloat(energy) || 0;
   const energyCost = parsedEnergy * BASE_RATE;
   const totalDue = energyCost + ADMIN_FEE;
 
+  const actualPowerKw = connector?.power_kw || randomSpeed || 150;
+
   const estimatedMinutes = useMemo(() => {
     if (parsedEnergy <= 0) return 0;
-    const chargingPowerKw = 150;
-    return Math.ceil((parsedEnergy / chargingPowerKw) * 60);
-  }, [parsedEnergy]);
+    return Math.ceil((parsedEnergy / actualPowerKw) * 60);
+  }, [parsedEnergy, actualPowerKw]);
 
   const handleCalculate = () => {
     if (parsedEnergy > 0) {
@@ -40,7 +96,16 @@ export function InitializeChargingScreen() {
     setIsCalculated(false);
   };
 
-  const canConfirm = isCalculated && parsedEnergy > 0;
+  const canConfirm = isCalculated && parsedEnergy > 0 && station && connector;
+
+  if (loading) {
+    return (
+      <View style={[styles.page, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#00696F" />
+        <Text style={{ marginTop: 16, color: '#6B7A7B' }}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.page}>
@@ -61,10 +126,10 @@ export function InitializeChargingScreen() {
         <View style={styles.stationInfoCard}>
           <View style={styles.stationInfoCardHeader}>
             <View style={{ flex: 1, gap: 12 }}>
-              <Text style={styles.stationName}>SPKLU PLN Sukses - Thamrin</Text>
+              <Text style={styles.stationName}>{station?.name || 'Unknown Station'}</Text>
               <View style={[styles.stationBadge, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <ChargingFlowIcon name="lightning" size={12} color="#019495" />
-                <Text style={styles.stationBadgeText}>ULTRA-FAST CHARGING (150 KW)</Text>
+                <Text style={styles.stationBadgeText}>CHARGING SPEED ({actualPowerKw} KW)</Text>
               </View>
             </View>
             <View style={styles.stationInfoCardImage}>
@@ -73,11 +138,11 @@ export function InitializeChargingScreen() {
           </View>
           <View style={styles.stationAddressRow}>
             <ChargingFlowIcon name="location" size={16} color="#6B7A7B" />
-            <Text style={styles.stationAddressText}>Jl. M.H. Thamrin No.1, Menteng, Kota Jakarta Pusat</Text>
+            <Text style={styles.stationAddressText}>{station?.address || 'Unknown Address'}</Text>
           </View>
           <View style={styles.stationAddressRow}>
             <ChargingFlowIcon name="shield" size={16} color="#6B7A7B" />
-            <Text style={styles.stationAddressText}>Owned & Operated by PLN</Text>
+            <Text style={styles.stationAddressText}>{station?.operator ? `Owned & Operated by ${station.operator}` : 'Unknown Operator'}</Text>
           </View>
         </View>
 
@@ -132,7 +197,7 @@ export function InitializeChargingScreen() {
             <Text style={styles.metricLabel}>CONNECTOR</Text>
             <View style={styles.metricValueRow}>
               <ChargingFlowIcon name="connector" size={20} color="#00696F" />
-              <Text style={styles.metricValue}>CCS Type 2</Text>
+              <Text style={styles.metricValue}>{connector?.type || 'Unknown'}</Text>
             </View>
           </View>
           <View style={styles.metricCard}>
@@ -150,7 +215,7 @@ export function InitializeChargingScreen() {
           <Pressable
             style={[styles.primaryButton, !canConfirm && styles.disabledPrimaryButton]}
             disabled={!canConfirm}
-            onPress={() => navigate('/charging-flow/success')}
+            onPress={() => navigate('/charging-flow/success', { state: { station, connector, actualPowerKw, energy: parsedEnergy, totalDue, estimatedMinutes } })}
           >
             <Text style={styles.primaryButtonText}>
               {canConfirm ? `Confirm & Pay (Rp ${formatRupiah(totalDue)})` : 'Confirm & Pay'}

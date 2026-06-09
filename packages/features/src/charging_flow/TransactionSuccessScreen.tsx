@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Image, type ImageSourcePropType } from 'react-native';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { chargingFlowStyles as styles } from '@evflow/ui';
 import { ChargingFlowIcon } from './components/ChargingFlowIcon';
 import paymentCompletePng from '../assets/images/payment-complete.png';
@@ -10,6 +10,7 @@ import { ChargingFlowHeader } from './components/ChargingFlowHeader';
 
 export function TransactionSuccessScreen() {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const insets = useAppSafeAreaInsets();
   const [isPluggedIn, setIsPluggedIn] = useState(false);
 
@@ -22,6 +23,8 @@ export function TransactionSuccessScreen() {
       clearTimeout(pluggedInTimer);
     };
   }, []);
+
+  const amountPaid = state?.totalDue || 51820;
 
   return (
     <View style={styles.page}>
@@ -59,7 +62,7 @@ export function TransactionSuccessScreen() {
           <View style={styles.divider} />
           <View style={styles.referenceRow}>
             <Text style={[styles.referenceValue, { fontSize: 18 }]}>Amount Paid</Text>
-            <Text style={[styles.referenceValue, { color: '#019495', fontSize: 18 }]}>Rp 51,820</Text>
+            <Text style={[styles.referenceValue, { color: '#019495', fontSize: 18 }]}>Rp {amountPaid.toLocaleString('id-ID')}</Text>
           </View>
         </View>
 
@@ -86,7 +89,7 @@ export function TransactionSuccessScreen() {
             accessibilityState={{ disabled: !isPluggedIn }}
             disabled={!isPluggedIn}
             style={[styles.primaryButton, !isPluggedIn && styles.disabledPrimaryButton]}
-            onPress={() => navigate('/charging-flow/status')}
+            onPress={() => navigate('/charging-flow/status', { state })}
           >
             <View style={styles.buttonIconRow}>
               <ChargingFlowIcon name="connector" size={20} color="#004a4f" />

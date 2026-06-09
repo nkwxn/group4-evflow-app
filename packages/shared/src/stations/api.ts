@@ -148,3 +148,13 @@ export async function fetchSpeedTiers(fetcher: typeof fetch = fetch) {
 
   return response.json() as Promise<SpeedTierApiItem[]>;
 }
+
+export async function fetchStation(id: string, fetcher: typeof fetch = fetch) {
+  const response = await fetcher(`${EVFLOW_API_BASE_URL}/api/v1/stations/${id}`);
+
+  if (!response.ok) {
+    throw new Error(`EVFlow station request failed with status ${response.status}`);
+  }
+
+  return response.json() as Promise<StationApiItem>;
+}

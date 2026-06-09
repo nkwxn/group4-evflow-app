@@ -1,24 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { chargingFlowStyles as styles } from '@evflow/ui';
+import { fetchSpeedTiers, type SpeedTierApiItem } from '@evflow/shared';
 import { ChargingFlowIcon } from './components/ChargingFlowIcon';
 import { useAppSafeAreaInsets } from '../shared/useAppSafeAreaInsets';
 import { ChargingFlowHeader } from './components/ChargingFlowHeader';
+import { ProgressRing } from './components/ProgressRing';
 
-const purchasedKwh = 20;
 const fastChargeTarget = 80;
 const fastChargeDurationMs = 6000;
 const slowChargeDurationMs = 10000;
 const simulationTickMs = 100;
-const pricePerKwh = 2591;
-const fastDeliveryPowerKw = 142;
-const slowDeliveryPowerKw = 38;
+const pricePerKwh = 2466; // Matching BASE_RATE
 
 export function ChargingStatusScreen() {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const insets = useAppSafeAreaInsets();
   const [progress, setProgress] = useState(0);
+  const [speedTiers, setSpeedTiers] = useState<SpeedTierApiItem[]>([]);
+
+  const purchasedKwh = state?.energy || 20;
+  const fastDeliveryPowerKw = state?.actualPowerKw || 142;
+  const slowDeliveryPowerKw = Math.max(Math.floor(fastDeliveryPowerKw * 0.26), 1);
+  const stationName = state?.station?.name || 'SPKLU PLN Sukses - Thamrin';
+  const connectorType = state?.connector?.type || 'Connector 02';
+
+  useEffect(() => {
+    fetchSpeedTiers().then(setSpeedTiers).catch(console.error);
+  }, []);
 
   useEffect(() => {
     const startedAt = Date.now();
@@ -52,11 +63,11 @@ export function ChargingStatusScreen() {
     }
 
     const timeout = setTimeout(() => {
-      navigate('/charging-flow/successful', { replace: true });
+      navigate('/charging-flow/successful', { replace: true, state });
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [navigate, progress]);
+  }, [navigate, progress, state]);
 
   const chargingMetrics = useMemo(() => {
     const roundedProgress = Math.min(Math.round(progress), 100);
@@ -64,25 +75,32 @@ export function ChargingStatusScreen() {
     const amountUtilized = Math.round(deliveredKwh * pricePerKwh);
     const isTapering = progress >= fastChargeTarget;
     const deliveryPower = isTapering ? slowDeliveryPowerKw : fastDeliveryPowerKw;
+    
+    const amps = Math.round((deliveryPower * 1000) / 400);
+    const outputRate = `400V / ${amps}A`;
+
     const remainingMs =
       progress < fastChargeTarget
         ? ((fastChargeTarget - progress) / fastChargeTarget) * fastChargeDurationMs + slowChargeDurationMs
         : ((100 - progress) / (100 - fastChargeTarget)) * slowChargeDurationMs;
     const remainingMinutes = Math.max(Math.ceil(remainingMs / 60000), 0);
 
+    const activeTier = speedTiers.find(tier => 
+      deliveryPower >= tier.min_kw && (tier.max_kw === null || deliveryPower <= tier.max_kw)
+    );
+    const fallbackLabel = isTapering ? 'TAPERING CHARGE' : 'FAST CHARGE';
+    const chargingLabel = activeTier ? activeTier.label : fallbackLabel;
+
     return {
       amountUtilized,
       deliveredKwh,
       deliveryPower,
-      outputRate: isTapering ? '400V / 95A' : '400V / 355A',
+      outputRate,
       remainingMinutes,
-      roundedProgress
+      roundedProgress,
+      chargingLabel
     };
-  }, [progress]);
-
-  const ringStyle = {
-    backgroundImage: `conic-gradient(#01e0f0 ${progress * 3.6}deg, #dce7eb 0deg)`
-  } as unknown as View['props']['style'];
+  }, [progress, purchasedKwh, fastDeliveryPowerKw, slowDeliveryPowerKw, speedTiers]);
 
   return (
     <View style={styles.page}>
@@ -98,23 +116,21 @@ export function ChargingStatusScreen() {
       >
         <View style={styles.chargingActiveHeader}>
           <Text style={styles.chargingActiveText}>● CHARGING SESSION ACTIVE</Text>
-          <Text style={styles.chargingStationName}>Station: SPKLU PLN Sukses - Thamrin • Connector 02</Text>
+          <Text style={styles.chargingStationName}>Station: {stationName} • {connectorType}</Text>
         </View>
 
         <View style={styles.progressContainer}>
-          <View style={[styles.progressRing, ringStyle]}>
-            <View style={styles.progressCircle}>
-              <Text style={styles.progressPercent}>{chargingMetrics.roundedProgress}%</Text>
-              <Text style={styles.progressLabel}>
-                {progress >= fastChargeTarget ? 'TAPERING CHARGE' : 'FAST CHARGE'}
+          <ProgressRing progress={progress}>
+            <Text style={styles.progressPercent}>{chargingMetrics.roundedProgress}%</Text>
+            <Text style={styles.progressLabel}>
+              {chargingMetrics.chargingLabel.toUpperCase()} CHARGING
+            </Text>
+            <View style={styles.progressSublabel}>
+              <Text style={styles.progressSublabelText}>
+                {chargingMetrics.deliveredKwh.toFixed(2)} / {purchasedKwh.toFixed(2)} kWh purchased
               </Text>
-              <View style={styles.progressSublabel}>
-                <Text style={styles.progressSublabelText}>
-                  {chargingMetrics.deliveredKwh.toFixed(2)} / {purchasedKwh.toFixed(2)} kWh purchased
-                </Text>
-              </View>
             </View>
-          </View>
+          </ProgressRing>
         </View>
 
         <View style={styles.metricsGrid}>
@@ -156,14 +172,14 @@ export function ChargingStatusScreen() {
         <View style={styles.infoCard}>
           <Text style={{ fontSize: 20, color: '#019495', marginTop: 2 }}>ⓘ</Text>
           <Text style={styles.infoCardText}>
-            Your charging session will automatically pause once it hits your purchased target of 20.00 kWh to protect battery health.
+            Your charging session will automatically pause once it hits your purchased target of {purchasedKwh.toFixed(2)} kWh to protect battery health.
           </Text>
         </View>
 
         <View style={styles.footerSpacer} />
 
         <View style={styles.footerAction}>
-          <Pressable style={styles.dangerButton} onPress={() => navigate('/charging-flow/successful')}>
+          <Pressable style={styles.dangerButton} onPress={() => navigate('/charging-flow/successful', { state })}>
             <ChargingFlowIcon name="stop" size={20} color="#ffffff" />
             <Text style={styles.dangerButtonText}>STOP CHARGING SESSION</Text>
           </Pressable>

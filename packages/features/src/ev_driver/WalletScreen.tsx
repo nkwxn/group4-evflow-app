@@ -1,10 +1,12 @@
-import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { walletScreenStyles as styles } from '@evflow/ui';
 import { fetchWalletBalance, fetchWalletTopups, type TopupApiItem } from '@evflow/shared';
 import { SvgAssetIcon } from '../shared/SvgAssetIcon';
 import { walletTransactions, type WalletTransaction } from './walletTransactions';
+import { downloadReceipt } from '../shared/downloadReceipt';
+import { ReceiptPdfViewer } from '../shared/ReceiptPdfViewer';
 
 type WalletScreenProps = {
   bottomInset?: number;
@@ -184,6 +186,23 @@ function TransactionDetailModal({ bottomInset, desktop, screenHeight, topInset, 
   }
 
   const success = transaction.status === 'success';
+  const receiptData = {
+    amount: formatDetailAmount(transaction.amount),
+    date: formatDate(transaction.occurredAt),
+    destination: transaction.destination,
+    orderId: transaction.orderId,
+    status: success ? 'Success' : 'Failed',
+    summaryMeta: transaction.referenceNo,
+    summaryTitle: transaction.type === 'topup' ? 'Wallet Topup' : 'Charging Payment',
+    time: formatTime(transaction.occurredAt),
+    total: formatCurrency(Math.abs(transaction.amount)),
+    transactionId: transaction.referenceNo,
+    typeText: transaction.type === 'topup' ? 'Top Up' : 'Charging'
+  };
+
+  function handleDownloadInvoice() {
+    downloadReceipt(receiptData);
+  }
 
   return (
     <Modal animationType={desktop ? 'fade' : 'slide'} transparent visible onRequestClose={onClose}>
@@ -230,7 +249,7 @@ function TransactionDetailModal({ bottomInset, desktop, screenHeight, topInset, 
               style={styles.detailSectionHeader}
             >
               <Text style={styles.detailSectionTitle}>TRANSACTION DETAILS</Text>
-              <Text style={styles.detailChevron}>{detailsExpanded ? '⌃' : '⌄'}</Text>
+              <Text style={[styles.detailChevron, !detailsExpanded && { transform: [{ rotate: '180deg' }] }]}>⌃</Text>
             </Pressable>
 
             {detailsExpanded ? (
@@ -250,11 +269,13 @@ function TransactionDetailModal({ bottomInset, desktop, screenHeight, topInset, 
           </ScrollView>
 
           <View style={[styles.invoiceFooter, { paddingBottom: 24 + bottomInset }]}>
-            <Pressable accessibilityRole="button" style={styles.invoiceButton}>
+            <Pressable accessibilityRole="button" style={styles.invoiceButton} onPress={handleDownloadInvoice}>
               <Text style={styles.invoiceButtonText}>Download Invoice</Text>
             </Pressable>
           </View>
         </View>
+
+        {Platform.OS !== 'web' ? <ReceiptPdfViewer presentation="overlay" /> : null}
       </View>
     </Modal>
   );
@@ -330,7 +351,8 @@ function mapTopupToTransaction(topup: TopupApiItem): WalletTransaction {
     referenceNo: topup.xendit_invoice_id ?? topup.external_id,
     status: success ? 'success' : 'failed',
     title: success ? 'Top Up - Xendit' : `Top Up - ${formatTopupStatus(topup.status)}`,
-    type: 'topup'
+    type: 'topup',
+    invoiceUrl: topup.invoice_url ?? undefined
   };
 }
 

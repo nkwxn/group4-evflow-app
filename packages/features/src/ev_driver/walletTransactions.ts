@@ -13,6 +13,7 @@ export type WalletTransaction = {
   referenceNo: string;
   orderId: string;
   destination: string;
+  invoiceUrl?: string;
 };
 
 export const walletTransactions: WalletTransaction[] = [

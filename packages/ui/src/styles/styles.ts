@@ -611,7 +611,8 @@ export const registrationScreenStyles = StyleSheet.create({
   page: {
     backgroundColor: colors.background,
     flex: 1,
-    minHeight: '100%'
+    height: '100%',
+    overflow: 'hidden'
   },
   header: {
     borderBottomColor: '#dce4e8',
